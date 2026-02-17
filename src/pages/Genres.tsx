@@ -52,90 +52,213 @@ const GenresPage = () => {
   const selectedGenre = genres.find(g => g.id === selectedGenreId);
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen" style={{ background: 'var(--cinema-black)' }}>
+
+      {/* Atmospheric layers */}
+      <div className="grain-overlay" />
+      <div className="ambient-glow" />
+
       <Navbar />
       <BackButton />
 
-      <div className="pt-24 container mx-auto px-4 md:px-8 lg:px-12 pb-16">
-        {/* Header Section */}
-        <div className="mb-10">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-            Genres
+      <div className="relative z-10 pt-24 mx-auto max-w-[1400px] px-4 md:px-8 lg:px-12 pb-16">
+
+        {/* ── Page header ── */}
+        <div style={{ marginBottom: '3rem' }}>
+          <div className="flex items-center gap-4 mb-3">
+            <span className="eyebrow">Browse</span>
+            <span className="cinema-divider" />
+          </div>
+          <h1 className="title-display animate-fade-up">
+            Browse by <em>Genre</em>
           </h1>
-          <p className="text-white/60 text-sm md:text-base">
-            Browse movies by genre
-          </p>
         </div>
 
-        {/* Genre Filter */}
-        <div className="mb-10">
-          <div className="flex flex-wrap gap-2">
-            {genres.map((genre) => (
-              <button
-                key={genre.id}
-                onClick={() => handleGenreClick(genre.id)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  selectedGenreId === genre.id
-                    ? 'bg-white text-black'
-                    : 'bg-white/10 text-white hover:bg-white/20'
-                }`}
-              >
-                {genre.name}
-              </button>
-            ))}
+        {/* ── Genre pills ── */}
+        <div style={{ marginBottom: '3rem' }} className="animate-fade-up delay-100">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+            {genres.map((genre) => {
+              const isActive = selectedGenreId === genre.id;
+              return (
+                <button
+                  key={genre.id}
+                  onClick={() => handleGenreClick(genre.id)}
+                  className="detail-genre"
+                  style={{
+                    cursor: 'pointer',
+                    color: isActive ? 'var(--cinema-gold)' : undefined,
+                    borderColor: isActive ? 'rgba(201,169,110,0.3)' : undefined,
+                    background: isActive ? 'rgba(201,169,110,0.06)' : undefined,
+                  }}
+                >
+                  {genre.name}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Results Section */}
+        {/* ── Results ── */}
         {selectedGenre && (
-          <div className="space-y-8">
-            {/* Results Header */}
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                {selectedGenre.name}
-              </h2>
-              <p className="text-white/60 text-sm">
-                {movies.length} {movies.length === 1 ? 'movie' : 'movies'}
-              </p>
+          <div>
+
+            {/* Results header */}
+            <div style={{ marginBottom: '2rem' }} className="animate-fade-up">
+              <div className="flex items-center gap-4 mb-3">
+                <span className="eyebrow">Genre spotlight</span>
+                <span className="cinema-divider" />
+              </div>
+              <div className="flex items-baseline gap-3">
+                <h2 className="title-display">
+                  <em>{selectedGenre.name}</em>
+                </h2>
+                <span style={{
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '10px',
+                  fontWeight: 500,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--cinema-muted)',
+                }}>
+                  {movies.length} {movies.length === 1 ? 'title' : 'titles'}
+                </span>
+              </div>
             </div>
 
-            {/* Movies Grid */}
+            {/* Loading state */}
             {isLoading ? (
-              <div className="flex items-center justify-center py-24">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                  <p className="text-white/60">Loading movies...</p>
-                </div>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingTop: '6rem',
+                paddingBottom: '6rem',
+                gap: '1.25rem',
+              }}>
+                {/* Cinema spinner — thin gold ring */}
+                <div style={{
+                  width: '36px', height: '36px',
+                  borderRadius: '50%',
+                  border: '1px solid rgba(201,169,110,0.15)',
+                  borderTopColor: 'var(--cinema-gold)',
+                  animation: 'spin 0.9s linear infinite',
+                }} />
+                <p style={{
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '10px',
+                  fontWeight: 500,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  color: 'var(--cinema-muted)',
+                }}>
+                  Loading titles
+                </p>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
               </div>
+
             ) : movies.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                {movies.map((movie) => (
-                  <MovieCard key={movie.id} movie={movie} />
+              /* Movies grid */
+              <div
+                className="animate-fade-up"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                  gap: '10px',
+                }}
+              >
+                {movies.map((movie, i) => (
+                  <div
+                    key={movie.id}
+                    className="animate-fade-up"
+                    style={{ animationDelay: `${Math.min(i * 0.04, 0.5)}s` }}
+                  >
+                    <MovieCard movie={movie} />
+                  </div>
                 ))}
               </div>
+
             ) : (
-              <div className="text-center py-24">
-                <Search className="h-16 w-16 text-white/30 mx-auto mb-4" />
-                <p className="text-xl text-white/60">No movies found in this genre</p>
+              /* No results */
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingTop: '6rem',
+                paddingBottom: '6rem',
+                gap: '1rem',
+              }}>
+                <Search style={{ width: '28px', height: '28px', color: 'var(--cinema-muted)' }} />
+                <span style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '1.3rem',
+                  fontWeight: 300,
+                  fontStyle: 'italic',
+                  color: 'rgba(255,255,255,0.35)',
+                }}>
+                  No titles found
+                </span>
               </div>
             )}
           </div>
         )}
 
-        {/* Empty State */}
+        {/* ── Empty state — no genre selected ── */}
         {!selectedGenreId && (
-          <div className="flex flex-col items-center justify-center py-24">
-            <div className="text-center max-w-md">
-              <div className="text-6xl mb-4">🎬</div>
-              <h3 className="text-2xl font-bold text-white mb-3">
-                Select a Genre
-              </h3>
-              <p className="text-white/60">
-                Choose a genre above to discover movies
-              </p>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingTop: '6rem',
+            paddingBottom: '6rem',
+            gap: '1.25rem',
+          }}
+            className="animate-fade-up delay-200"
+          >
+            {/* Decorative film reel rings */}
+            <div style={{ position: 'relative', width: '72px', height: '72px', marginBottom: '0.5rem' }}>
+              <div style={{
+                position: 'absolute', inset: 0,
+                borderRadius: '50%',
+                border: '1px solid rgba(201,169,110,0.15)',
+              }} />
+              <div style={{
+                position: 'absolute', inset: '10px',
+                borderRadius: '50%',
+                border: '1px solid rgba(201,169,110,0.08)',
+              }} />
+              <div style={{
+                position: 'absolute', inset: '22px',
+                borderRadius: '50%',
+                background: 'rgba(201,169,110,0.06)',
+                border: '1px solid rgba(201,169,110,0.12)',
+              }} />
             </div>
+
+            <h3 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '1.6rem',
+              fontWeight: 300,
+              fontStyle: 'italic',
+              color: 'rgba(255,255,255,0.5)',
+              letterSpacing: '0.01em',
+            }}>
+              Select a genre
+            </h3>
+            <p style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '13px',
+              fontWeight: 300,
+              color: 'var(--cinema-muted)',
+              letterSpacing: '0.02em',
+            }}>
+              Choose a genre above to discover titles
+            </p>
           </div>
         )}
+
       </div>
     </div>
   );
