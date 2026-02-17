@@ -1,129 +1,200 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Film, Menu, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { Search, Menu, X, Home, Clapperboard, Tv, Sparkles } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
 
 export const Navbar = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive     = useCallback((path: string) => location.pathname === path, [location.pathname]);
+  const isSearchPage = location.pathname === '/search';
 
-  const navItems = [
-    { path: '/', label: 'Home' },
-    { path: '/movies', label: 'Movies' },
-    { path: '/tv', label: 'TV Shows' },
-    { path: '/genres', label: 'Genres' },
-  ];
+  const navItems = useMemo(() => [
+    { path: '/',       label: 'Home',     Icon: Home },
+    { path: '/movies', label: 'Movies',   Icon: Clapperboard },
+    { path: '/tv',     label: 'TV Shows', Icon: Tv },
+    { path: '/genres', label: 'Genres',   Icon: Sparkles },
+  ], []);
 
-  const handleNavClick = () => {
-    setIsOpen(false);
-  };
+  const handleNavClick = useCallback(() => setIsOpen(false), []);
+  const toggleMenu     = useCallback(() => setIsOpen(prev => !prev), []);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50">
-      {/* Background with blur */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background/80 backdrop-blur-xl border-b border-border/30" />
-      
-      {/* Content */}
-      <div className="relative container mx-auto px-3 md:px-4 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link 
-          to="/" 
-          className="flex items-center gap-2 md:gap-3 hover:scale-105 transition-transform duration-300 group flex-shrink-0"
-        >
-          <div className="p-1.5 md:p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
-            <Film className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+    <nav
+      style={{
+        position: 'fixed',
+        top: 0, left: 0, right: 0,
+        zIndex: 50,
+        background: 'rgba(8,8,8,0.85)',
+        backdropFilter: 'blur(16px)',
+        borderBottom: '1px solid var(--cinema-border)',
+      }}
+    >
+      <div
+        className="container mx-auto px-4 md:px-6"
+        style={{ height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+      >
+
+        {/* ── Logo ── */}
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
+          <div style={{
+            width: '32px', height: '32px',
+            border: '1px solid rgba(201,169,110,0.35)',
+            borderRadius: '3px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(201,169,110,0.06)',
+            flexShrink: 0,
+          }}>
+            <span style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '15px', fontWeight: 300, fontStyle: 'italic',
+              color: 'var(--cinema-gold)', lineHeight: 1, letterSpacing: '-0.02em',
+            }}>M</span>
           </div>
-          <span className="hidden sm:inline text-lg md:text-xl font-display font-400 bg-gradient-to-r from-foreground via-foreground to-accent bg-clip-text text-transparent">
-            Movie Guy
-          </span>
-          <span className="sm:hidden text-base md:text-xl font-display font-400 bg-gradient-to-r from-foreground via-foreground to-accent bg-clip-text text-transparent">
-            MG
+          <span
+            className="hidden sm:inline"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '1.15rem', fontWeight: 300, fontStyle: 'italic',
+              letterSpacing: '0.02em', color: '#fff', lineHeight: 1,
+            }}
+          >
+            Movie<em style={{ color: 'var(--cinema-gold)', fontStyle: 'italic' }}>Guy</em>
           </span>
         </Link>
 
-        {/* Desktop Navigation Links */}
-        <div className="hidden md:flex items-center gap-1 px-2 py-1.5 rounded-xl bg-muted/20 border border-border/30 backdrop-blur-sm">
-          {navItems.map((item) => (
-            <Link key={item.path} to={item.path}>
-              <button
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 ${
-                  isActive(item.path)
-                    ? 'bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20'
-                    : 'text-foreground/70 hover:text-foreground hover:bg-muted/50'
-                }`}
+        {/* ── Desktop nav links ── */}
+        <div className="hidden lg:flex items-center" style={{ gap: '2rem' }}>
+          {navItems.map(({ path, label, Icon }) => (
+            <Link key={path} to={path} style={{ textDecoration: 'none' }}>
+              <span
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                  fontFamily: 'var(--font-body)', fontSize: '11px',
+                  fontWeight: isActive(path) ? 500 : 400,
+                  letterSpacing: '0.12em', textTransform: 'uppercase',
+                  color: isActive(path) ? '#fff' : 'var(--cinema-muted)',
+                  transition: 'color 0.2s', position: 'relative', paddingBottom: '2px',
+                }}
+                onMouseEnter={e => { if (!isActive(path)) (e.currentTarget as HTMLSpanElement).style.color = 'rgba(255,255,255,0.75)'; }}
+                onMouseLeave={e => { if (!isActive(path)) (e.currentTarget as HTMLSpanElement).style.color = 'var(--cinema-muted)'; }}
               >
-                {item.label}
-              </button>
+                <Icon style={{ width: '13px', height: '13px', opacity: isActive(path) ? 1 : 0.6 }} />
+                {label}
+                {isActive(path) && (
+                  <span style={{
+                    position: 'absolute', bottom: '-2px', left: 0, right: 0,
+                    height: '1px',
+                    background: 'linear-gradient(90deg, var(--cinema-gold) 0%, transparent 100%)',
+                  }} />
+                )}
+              </span>
             </Link>
           ))}
         </div>
 
-        {/* Desktop Search Button */}
-        <Link to="/search" className="hidden md:block">
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`rounded-lg transition-all duration-300 ${
-              isActive('/search')
-                ? 'bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20'
-                : 'text-foreground/70 hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            <Search className="h-5 w-5" />
-          </Button>
-        </Link>
+        {/* ── Right actions ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
 
-        {/* Mobile Menu Toggle & Search */}
-        <div className="md:hidden flex items-center gap-2">
-          <Link to="/search" className="flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`rounded-lg transition-all duration-300 h-9 w-9 ${
-                isActive('/search')
-                  ? 'bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20'
-                  : 'text-foreground/70 hover:text-foreground hover:bg-muted/50'
-              }`}
+          {/* Single search button — hidden on /search page */}
+          {!isSearchPage && (
+            <Link to="/search" style={{ textDecoration: 'none' }}>
+              <button
+                style={{
+                  width: '36px', height: '36px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'transparent',
+                  border: '1px solid var(--cinema-border)',
+                  borderRadius: '3px',
+                  color: 'var(--cinema-muted)',
+                  cursor: 'pointer',
+                  transition: 'color 0.2s, border-color 0.2s',
+                }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget as HTMLButtonElement;
+                  el.style.color = '#fff';
+                  el.style.borderColor = 'rgba(255,255,255,0.2)';
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget as HTMLButtonElement;
+                  el.style.color = 'var(--cinema-muted)';
+                  el.style.borderColor = 'var(--cinema-border)';
+                }}
+                aria-label="Search"
+              >
+                <Search style={{ width: '15px', height: '15px' }} />
+              </button>
+            </Link>
+          )}
+
+          {/* Hamburger — mobile only */}
+          <div className="lg:hidden">
+            <button
+              onClick={toggleMenu}
+              style={{
+                width: '36px', height: '36px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: isOpen ? 'rgba(255,255,255,0.05)' : 'transparent',
+                border: '1px solid var(--cinema-border)',
+                borderRadius: '3px',
+                color: isOpen ? '#fff' : 'var(--cinema-muted)',
+                cursor: 'pointer',
+                transition: 'color 0.2s, background 0.2s',
+              }}
+              aria-label="Toggle menu"
+              aria-expanded={isOpen}
             >
-              <Search className="h-4 w-4" />
-            </Button>
-          </Link>
-
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 rounded-lg text-foreground/70 hover:text-foreground hover:bg-muted/50 transition-all duration-300 flex-shrink-0"
-            aria-label="Toggle menu"
-          >
-            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+              {isOpen
+                ? <X    style={{ width: '15px', height: '15px' }} />
+                : <Menu style={{ width: '15px', height: '15px' }} />
+              }
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Mobile Navigation Menu */}
+      {/* ── Mobile drawer ── */}
       {isOpen && (
-        <div className="md:hidden absolute top-16 left-0 right-0 bg-background/95 backdrop-blur-xl border-b border-border/30 animate-in fade-in slide-in-from-top-2">
-          <div className="container mx-auto px-3 py-3 flex flex-col gap-1">
-            {navItems.map((item) => (
-              <Link key={item.path} to={item.path} onClick={handleNavClick}>
-                <button
-                  className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
-                    isActive(item.path)
-                      ? 'bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20'
-                      : 'text-foreground/70 hover:text-foreground hover:bg-muted/50'
-                  }`}
-                >
-                  {item.label}
-                </button>
+        <div style={{
+          background: 'rgba(8,8,8,0.98)',
+          backdropFilter: 'blur(16px)',
+          borderBottom: '1px solid var(--cinema-border)',
+        }}>
+          <div style={{
+            height: '1px',
+            background: 'linear-gradient(90deg, var(--cinema-gold) 0%, transparent 60%)',
+            opacity: 0.3,
+          }} />
+          <div className="container mx-auto px-4 py-4" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {navItems.map(({ path, label, Icon }) => (
+              <Link key={path} to={path} onClick={handleNavClick} style={{ textDecoration: 'none' }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '0.75rem',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '3px',
+                  background: isActive(path) ? 'rgba(201,169,110,0.07)' : 'transparent',
+                  borderLeft: isActive(path) ? '1px solid rgba(201,169,110,0.4)' : '1px solid transparent',
+                  transition: 'background 0.2s',
+                }}>
+                  <Icon style={{
+                    width: '15px', height: '15px',
+                    color: isActive(path) ? 'var(--cinema-gold)' : 'var(--cinema-muted)',
+                    flexShrink: 0,
+                  }} />
+                  <span style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '11px', fontWeight: 500,
+                    letterSpacing: '0.12em', textTransform: 'uppercase',
+                    color: isActive(path) ? '#fff' : 'var(--cinema-muted)',
+                  }}>
+                    {label}
+                  </span>
+                </div>
               </Link>
             ))}
           </div>
         </div>
       )}
-
-      {/* Bottom accent line */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
     </nav>
   );
 };

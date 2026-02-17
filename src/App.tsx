@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import MovieDetail from "./pages/MovieDetail";
@@ -13,7 +14,34 @@ import Genres from "./pages/Genres";
 import NotFound from "./pages/NotFound";
 import RecommendationsPage from '@/pages/RecommendationsPage';
 
-const queryClient = new QueryClient();
+// Optimized QueryClient configuration for better performance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // How long data is considered fresh (no refetch needed)
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      
+      // How long unused data stays in cache before garbage collection
+      gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime in v4)
+      
+      // Retry failed requests with exponential backoff
+      retry: 2,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      
+      // Refetch behavior optimization
+      refetchOnWindowFocus: false, // Don't refetch when user returns to tab
+      refetchOnReconnect: true,    // Refetch when internet reconnects
+      refetchOnMount: true,         // Refetch when component mounts if data is stale
+      
+      // Network mode
+      networkMode: 'online', // Only run queries when online
+    },
+    mutations: {
+      retry: 1,
+      networkMode: 'online',
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -35,6 +63,13 @@ const App = () => (
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
+    
+    {/* React Query DevTools - Only shows in development */}
+    {import.meta.env.DEV && (
+      <ReactQueryDevtools 
+        initialIsOpen={false}
+      />
+    )}
   </QueryClientProvider>
 );
 

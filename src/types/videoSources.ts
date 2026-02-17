@@ -6,12 +6,17 @@ export interface VideoSource {
 }
 
 export const videoSources: VideoSource[] = [
-  
   {
     id: 'vidrock',
     name: 'VidRock',
     getMovieUrl: (id) => `https://vidrock.net/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidrock.net/tv/${id}/${s}/${e}`,
+  },
+  {
+    id: 'vixsrc',
+    name: 'VixSrc',
+    getMovieUrl: (id) => `https://vixsrc.to/movie/${id}`,
+    getTvUrl: (id, s, e) => `https://vixsrc.to/tv/${id}/${s}/${e}`,
   },
   {
     id: 'vidsrc1',
@@ -31,13 +36,12 @@ export const videoSources: VideoSource[] = [
     getMovieUrl: (id) => `https://vidsrc.xyz/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://vidsrc.xyz/embed/tv/${id}/${s}/${e}`,
   },
-    {
+  {
     id: 'vidking',
     name: 'VidKing',
     getMovieUrl: (id) => `https://www.vidking.net/embed/movie/${id}`,
     getTvUrl: (id, s, e) => `https://www.vidking.net/embed/tv/${id}/${s}/${e}`,
   },
-  
   {
     id: 'smashystream',
     name: 'SmashyStream',

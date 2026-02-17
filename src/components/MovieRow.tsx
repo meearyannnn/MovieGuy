@@ -1,77 +1,100 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { MovieCard } from './MovieCard';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { type Movie } from '@/services/tmdb';
-import { ChevronRight } from 'lucide-react';
 
 interface MovieRowProps {
   title: string;
   fetchData: () => Promise<{ results: Movie[] }>;
   type?: 'movie' | 'tv';
+  onViewMore?: () => void;
 }
 
-export const MovieRow = ({ title, fetchData, type = 'movie' }: MovieRowProps) => {
+export const MovieRow = ({ title, fetchData, type = 'movie', onViewMore }: MovieRowProps) => {
   const [movies, setMovies] = useState<Movie[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadMovies = async () => {
-      try {
-        setIsLoading(true);
-        const data = await fetchData();
-        setMovies(data.results);
-      } catch (error) {
-        console.error('Error loading movies:', error);
-      } finally {
-        setIsLoading(false);
-      }
+      const data = await fetchData();
+      setMovies(data.results || []);
     };
     loadMovies();
   }, [fetchData]);
 
+  useEffect(() => {
+    checkScroll();
+  }, [movies]);
+
+  const checkScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    setShowLeftArrow(scrollLeft > 0);
+    setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+  };
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (!scrollRef.current) return;
+    const scrollAmount = scrollRef.current.clientWidth * 0.8;
+    scrollRef.current.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth',
+    });
+  };
+
+  if (movies.length === 0) return null;
+
   return (
-    <div className="mb-16 group/row">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6 px-4">
-        <div className="flex-1">
-          <h2 className="text-3xl font-display font-400 text-foreground tracking-tight">
-            {title}
-          </h2>
-        </div>
-        <button className="opacity-0 group-hover/row:opacity-100 transition-opacity duration-500 p-2 hover:bg-muted/50 rounded-full">
-          <ChevronRight className="h-5 w-5 text-accent" />
-        </button>
+    <div className="relative group px-4 md:px-12 lg:px-16">
+      {/* Section Header */}
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-xl md:text-2xl font-bold text-white/90">{title}</h2>
+        {onViewMore && (
+          <button 
+            onClick={onViewMore}
+            className="text-sm text-white/50 hover:text-white/90 transition-colors flex items-center gap-1"
+          >
+            View more
+            <span>→</span>
+          </button>
+        )}
       </div>
 
-      {/* Loading State */}
-      {isLoading ? (
-        <div className="px-4 flex gap-4 pb-4">
-          {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className="w-[200px] h-[300px] rounded-3xl bg-muted/30 animate-pulse flex-shrink-0"
-            />
-          ))}
-        </div>
-      ) : (
-        /* Scroll Area */
-        <ScrollArea className="w-full">
-          <div className="flex gap-4 px-4 pb-4">
-            {movies.map((movie, index) => (
-              <div
-                key={movie.id}
-                className="w-[200px] flex-shrink-0 animate-fade-in"
-                style={{
-                  animationDelay: `${index * 50}ms`,
-                }}
-              >
-                <MovieCard movie={movie} type={type} />
-              </div>
-            ))}
-          </div>
-          <ScrollBar orientation="horizontal" className="h-2" />
-        </ScrollArea>
+      {/* Navigation Arrows */}
+      {showLeftArrow && (
+        <button
+          onClick={() => scroll('left')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/80 hover:bg-black/90 text-white p-2 md:p-3 rounded-r-lg opacity-0 group-hover:opacity-100 transition-opacity hidden md:block"
+          aria-label="Scroll left"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
       )}
+
+      {showRightArrow && (
+        <button
+          onClick={() => scroll('right')}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/80 hover:bg-black/90 text-white p-2 md:p-3 rounded-l-lg opacity-0 group-hover:opacity-100 transition-opacity hidden md:block"
+          aria-label="Scroll right"
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
+      )}
+
+      {/* Movies Grid/Scroll */}
+      <div
+        ref={scrollRef}
+        onScroll={checkScroll}
+        className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth"
+      >
+        {movies.map((movie) => (
+          <div key={movie.id} className="flex-none w-[150px] md:w-[185px] lg:w-[200px]">
+            <MovieCard movie={movie} type={type} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
