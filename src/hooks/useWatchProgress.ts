@@ -110,5 +110,5 @@ export const useWatchProgress = () => {
     .filter(item => getProgressPercent(item) > 1 && getProgressPercent(item) < 98)
     .sort((a, b) => b.last_updated - a.last_updated);
 
-  return { continueWatching, removeItem };
+  return { continueWatching, progressList: continueWatching, removeItem };
 };

@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
 import { videoSources, type VideoSource } from '@/types/videoSources';
-import { Loader2 } from 'lucide-react';
+import { Server, Zap, ShieldCheck } from 'lucide-react';
 
 interface VideoSourceSelectorProps {
   selectedSource: VideoSource;
@@ -8,93 +7,72 @@ interface VideoSourceSelectorProps {
 }
 
 export const VideoSourceSelector = ({ selectedSource, onSourceChange }: VideoSourceSelectorProps) => {
-  const [loadingStates, setLoadingStates] = useState<Record<string, 'checking' | 'ready' | 'idle'>>({});
-
-  useEffect(() => {
-    // Start loading sources sequentially
-    videoSources.forEach((source, index) => {
-      setTimeout(() => {
-        setLoadingStates(prev => ({ ...prev, [source.id]: 'checking' }));
-        
-        setTimeout(() => {
-          setLoadingStates(prev => ({ ...prev, [source.id]: 'ready' }));
-        }, 1500);
-      }, index * 300);
-    });
-  }, []);
-
   return (
-    <div className="py-8">
-      <div className="w-full max-w-2xl mx-auto px-4">
-        <div className="mb-6">
-          <h3 className="text-xl font-bold text-white mb-2">Video Sources</h3>
-          <p className="text-sm text-white/60">Select your preferred streaming source</p>
-        </div>
-
-        <div className="space-y-4">
-          {videoSources.map((source) => {
-            const state = loadingStates[source.id] || 'idle';
-            const isSelected = selectedSource.id === source.id;
-            
-            return (
-              <div
-                key={source.id}
-                className={`flex items-center gap-4 transition-all duration-300 ${
-                  state === 'idle' ? 'opacity-20' : 'opacity-100'
-                }`}
-              >
-                {/* Status Circle */}
-                <div className="flex-shrink-0 w-7">
-                  {state === 'checking' ? (
-                    <Loader2 className="h-6 w-6 text-blue-500 animate-spin" />
-                  ) : state === 'ready' ? (
-                    <button
-                      onClick={() => onSourceChange(source)}
-                      className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                        isSelected 
-                          ? 'border-blue-500 bg-blue-500' 
-                          : 'border-gray-600 hover:border-gray-400'
-                      }`}
-                    >
-                      {isSelected && (
-                        <div className="h-3 w-3 rounded-full bg-white" />
-                      )}
-                    </button>
-                  ) : (
-                    <div className="h-6 w-6 rounded-full border-2 border-gray-800" />
-                  )}
-                </div>
-
-                {/* Source Name & Fire */}
-                <button
-                  onClick={() => state === 'ready' && onSourceChange(source)}
-                  disabled={state !== 'ready'}
-                  className="flex-1 flex items-center gap-2 text-left"
-                >
-                  <span className={`text-base font-medium transition-colors ${
-                    state === 'ready' 
-                      ? isSelected 
-                        ? 'text-white' 
-                        : 'text-gray-400 hover:text-gray-300'
-                      : 'text-gray-700'
-                  }`}>
-                    {source.name}
-                  </span>
-                  {state === 'ready' && <span className="text-lg">🔥</span>}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Only show "Checking" message on the first loading item */}
-        {videoSources.some(s => loadingStates[s.id] === 'checking') && (
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
-              Checking for videos...
+    <div className="w-full max-w-4xl mx-auto my-6 p-5 sm:p-6 rounded-2xl bg-[#0e1118] border border-white/10 shadow-2xl backdrop-blur-xl">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-white/10">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center">
+            <Server className="w-4 h-4 text-amber-400" />
+          </div>
+          <div>
+            <h3 className="font-display font-bold text-base text-white flex items-center gap-2">
+              Streaming Servers
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                Live
+              </span>
+            </h3>
+            <p className="text-xs text-white/50">
+              Select your preferred streaming provider. If a video fails or buffers, choose another server.
             </p>
           </div>
-        )}
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-white/50">
+          <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+          <span>Ad-Free Ready</span>
+        </div>
+      </div>
+
+      {/* Server Chips Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+        {videoSources.map((source, index) => {
+          const isSelected = selectedSource.id === source.id;
+          const isTopTier = index < 3;
+
+          return (
+            <button
+              key={source.id}
+              onClick={() => onSourceChange(source)}
+              className={`group relative flex items-center justify-between p-3 rounded-xl border text-left transition-all duration-200 ${
+                isSelected
+                  ? 'bg-amber-400 text-black border-amber-400 font-bold shadow-lg shadow-amber-400/25 scale-[1.02]'
+                  : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/10 hover:border-white/20 text-white/80 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span
+                  className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                    isSelected ? 'bg-black animate-ping' : isTopTier ? 'bg-emerald-400' : 'bg-amber-400/80'
+                  }`}
+                />
+                <span className="text-xs font-semibold truncate">
+                  {source.name}
+                </span>
+              </div>
+
+              {isTopTier && (
+                <span
+                  className={`text-[9px] font-extrabold uppercase px-1 rounded flex-shrink-0 ${
+                    isSelected ? 'bg-black text-amber-400' : 'bg-white/10 text-amber-400'
+                  }`}
+                >
+                  <Zap className="w-2.5 h-2.5 inline" />
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

@@ -95,6 +95,12 @@ export const tmdb = {
   getVideos: (id: number, type: 'movie' | 'tv' = 'movie') =>
     tmdbFetch(`/${type}/${id}/videos`),
 
+  discover: (type: 'movie' | 'tv' = 'movie', queryString: string = '') =>
+    tmdbFetch(`/discover/${type}?${queryString}`),
+
+  getRecommendations: (id: number, type: 'movie' | 'tv' = 'movie') =>
+    tmdbFetch(`/${type}/${id}/recommendations`),
+
   getImageUrl: (path: string, size: 'w500' | 'w300' | 'w185' | 'original' = 'w500') =>
     path ? `${TMDB_IMAGE_BASE}/${size}${path}` : '/placeholder.svg',
 };

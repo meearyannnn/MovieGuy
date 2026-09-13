@@ -1,200 +1,492 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Search, Menu, X, Home, Clapperboard, Tv, Sparkles } from 'lucide-react';
-import { useState, useCallback, useMemo } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Search, Menu, X, Home, Clapperboard, Tv, Sparkles, Bookmark, Film, Dices, Volume2, VolumeX, HelpCircle, Hourglass, Flame, Dna } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useWatchlist } from '@/hooks/useWatchlist';
+import { soundEffects } from '@/lib/soundEffects';
+import { CinemaRouletteModal } from './CinemaRouletteModal';
+import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
+import { ReelSwiperModal } from './ReelSwiperModal';
+import { CineDnaModal } from './CineDnaModal';
+import { MidnightVaultModal } from './MidnightVaultModal';
 
 export const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [showWatchlistModal, setShowWatchlistModal] = useState(false);
+  const [showRouletteModal, setShowRouletteModal] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+  const [showSwiperModal, setShowSwiperModal] = useState(false);
+  const [showDnaModal, setShowDnaModal] = useState(false);
+  const [showVaultModal, setShowVaultModal] = useState(false);
+  const [soundOn, setSoundOn] = useState(() => soundEffects.getSoundEnabled());
+  const keySequenceRef = useRef<string>('');
 
-  const isActive     = useCallback((path: string) => location.pathname === path, [location.pathname]);
+  const { watchlist, removeFromWatchlist } = useWatchlist();
+
+  const isActive = useCallback((path: string) => location.pathname === path, [location.pathname]);
   const isSearchPage = location.pathname === '/search';
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Global Keyboard Shortcuts Listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInput = activeEl?.tagName === 'INPUT' || activeEl?.tagName === 'TEXTAREA';
+
+      if (e.key === 'Escape') {
+        setShowWatchlistModal(false);
+        setShowRouletteModal(false);
+        setShowShortcutsModal(false);
+        setShowSwiperModal(false);
+        setShowDnaModal(false);
+        setShowVaultModal(false);
+        return;
+      }
+
+      if (isInput) return; // Don't intercept when user is typing in a field
+
+      // Secret vault detection
+      keySequenceRef.current = (keySequenceRef.current + e.key.toLowerCase()).slice(-5);
+      if (keySequenceRef.current === 'vault' || keySequenceRef.current.endsWith('cult')) {
+        soundEffects.playSlide();
+        setShowVaultModal(true);
+        keySequenceRef.current = '';
+        return;
+      }
+
+      if (e.key === '/') {
+        e.preventDefault();
+        soundEffects.playHoverTick();
+        navigate('/search');
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        soundEffects.playHoverTick();
+        setShowRouletteModal(prev => !prev);
+      } else if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        soundEffects.playHoverTick();
+        setShowSwiperModal(prev => !prev);
+      } else if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        const newState = soundEffects.toggleSound();
+        setSoundOn(newState);
+      } else if (e.key === '?') {
+        e.preventDefault();
+        soundEffects.playHoverTick();
+        setShowShortcutsModal(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
+
+  const toggleAudio = () => {
+    const newState = soundEffects.toggleSound();
+    setSoundOn(newState);
+  };
+
   const navItems = useMemo(() => [
-    { path: '/',       label: 'Home',     Icon: Home },
-    { path: '/movies', label: 'Movies',   Icon: Clapperboard },
-    { path: '/tv',     label: 'TV Shows', Icon: Tv },
-    { path: '/genres', label: 'Genres',   Icon: Sparkles },
+    { path: '/', label: 'Home' },
+    { path: '/movies', label: 'Movies' },
+    { path: '/tv', label: 'TV Shows' },
+    { path: '/genres', label: 'Genres' },
+    { path: '/recommendations', label: 'AI Vibes' },
   ], []);
 
-  const handleNavClick = useCallback(() => setIsOpen(false), []);
-  const toggleMenu     = useCallback(() => setIsOpen(prev => !prev), []);
-
   return (
-    <nav
-      style={{
-        position: 'fixed',
-        top: 0, left: 0, right: 0,
-        zIndex: 50,
-        background: 'rgba(8,8,8,0.85)',
-        backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid var(--cinema-border)',
-      }}
-    >
-      <div
-        className="container mx-auto px-4 md:px-6"
-        style={{ height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+    <>
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? 'glass-header py-2.5 shadow-2xl shadow-black/60'
+            : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent py-3'
+        }`}
       >
-
-        {/* ── Logo ── */}
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
-          <div style={{
-            width: '32px', height: '32px',
-            border: '1px solid rgba(201,169,110,0.35)',
-            borderRadius: '3px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(201,169,110,0.06)',
-            flexShrink: 0,
-          }}>
-            <span style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '15px', fontWeight: 300, fontStyle: 'italic',
-              color: 'var(--cinema-gold)', lineHeight: 1, letterSpacing: '-0.02em',
-            }}>M</span>
-          </div>
-          <span
-            className="hidden sm:inline"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '1.15rem', fontWeight: 300, fontStyle: 'italic',
-              letterSpacing: '0.02em', color: '#fff', lineHeight: 1,
-            }}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+          {/* ── Brand Logo ── */}
+          <Link
+            to="/"
+            onClick={() => soundEffects.playHoverTick()}
+            className="flex items-center gap-2.5 group focus:outline-none"
           >
-            Movie<em style={{ color: 'var(--cinema-gold)', fontStyle: 'italic' }}>Guy</em>
-          </span>
-        </Link>
+            <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 shadow-md p-0.5 transition-transform duration-300 group-hover:scale-105">
+              <div className="w-full h-full bg-[#07080b] rounded-[9px] flex items-center justify-center">
+                <Clapperboard className="w-4 h-4 text-amber-400" />
+              </div>
+            </div>
+            <span className="font-display font-extrabold text-lg tracking-tight text-white leading-none">
+              Movie<span className="text-amber-400">Guy</span>
+            </span>
+          </Link>
 
-        {/* ── Desktop nav links ── */}
-        <div className="hidden lg:flex items-center" style={{ gap: '2rem' }}>
-          {navItems.map(({ path, label, Icon }) => (
-            <Link key={path} to={path} style={{ textDecoration: 'none' }}>
-              <span
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                  fontFamily: 'var(--font-body)', fontSize: '11px',
-                  fontWeight: isActive(path) ? 500 : 400,
-                  letterSpacing: '0.12em', textTransform: 'uppercase',
-                  color: isActive(path) ? '#fff' : 'var(--cinema-muted)',
-                  transition: 'color 0.2s', position: 'relative', paddingBottom: '2px',
-                }}
-                onMouseEnter={e => { if (!isActive(path)) (e.currentTarget as HTMLSpanElement).style.color = 'rgba(255,255,255,0.75)'; }}
-                onMouseLeave={e => { if (!isActive(path)) (e.currentTarget as HTMLSpanElement).style.color = 'var(--cinema-muted)'; }}
-              >
-                <Icon style={{ width: '13px', height: '13px', opacity: isActive(path) ? 1 : 0.6 }} />
-                {label}
-                {isActive(path) && (
-                  <span style={{
-                    position: 'absolute', bottom: '-2px', left: 0, right: 0,
-                    height: '1px',
-                    background: 'linear-gradient(90deg, var(--cinema-gold) 0%, transparent 100%)',
-                  }} />
-                )}
-              </span>
-            </Link>
-          ))}
-        </div>
+          {/* ── Desktop Navigation Links ── */}
+          <nav className="hidden md:flex items-center gap-1 bg-white/[0.04] p-1 rounded-full border border-white/[0.08] backdrop-blur-xl">
+            {navItems.map(({ path, label }) => {
+              const active = isActive(path);
+              return (
+                <Link
+                  key={path}
+                  to={path}
+                  onClick={() => soundEffects.playHoverTick()}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all ${
+                    active
+                      ? 'bg-amber-400 text-black font-bold shadow-sm'
+                      : 'text-white/60 hover:text-white hover:bg-white/[0.06]'
+                  }`}
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
 
-        {/* ── Right actions ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-
-          {/* Single search button — hidden on /search page */}
-          {!isSearchPage && (
-            <Link to="/search" style={{ textDecoration: 'none' }}>
+          {/* ── Right Actions ── */}
+          <div className="flex items-center gap-2">
+            {/* Quick Search Button */}
+            {!isSearchPage && (
               <button
-                style={{
-                  width: '36px', height: '36px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'transparent',
-                  border: '1px solid var(--cinema-border)',
-                  borderRadius: '3px',
-                  color: 'var(--cinema-muted)',
-                  cursor: 'pointer',
-                  transition: 'color 0.2s, border-color 0.2s',
+                onClick={() => {
+                  soundEffects.playHoverTick();
+                  navigate('/search');
                 }}
-                onMouseEnter={e => {
-                  const el = e.currentTarget as HTMLButtonElement;
-                  el.style.color = '#fff';
-                  el.style.borderColor = 'rgba(255,255,255,0.2)';
-                }}
-                onMouseLeave={e => {
-                  const el = e.currentTarget as HTMLButtonElement;
-                  el.style.color = 'var(--cinema-muted)';
-                  el.style.borderColor = 'var(--cinema-border)';
-                }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-white/70 hover:text-white transition-all text-xs font-medium backdrop-blur-md"
                 aria-label="Search"
+                title="Search (/)"
               >
-                <Search style={{ width: '15px', height: '15px' }} />
+                <Search className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">Search</span>
               </button>
-            </Link>
-          )}
+            )}
 
-          {/* Hamburger — mobile only */}
-          <div className="lg:hidden">
+            {/* Watchlist Counter Button */}
             <button
-              onClick={toggleMenu}
-              style={{
-                width: '36px', height: '36px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: isOpen ? 'rgba(255,255,255,0.05)' : 'transparent',
-                border: '1px solid var(--cinema-border)',
-                borderRadius: '3px',
-                color: isOpen ? '#fff' : 'var(--cinema-muted)',
-                cursor: 'pointer',
-                transition: 'color 0.2s, background 0.2s',
+              onClick={() => {
+                soundEffects.playHoverTick();
+                setShowWatchlistModal(true);
               }}
-              aria-label="Toggle menu"
-              aria-expanded={isOpen}
+              className="relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-white/80 hover:text-white transition-all"
+              aria-label="Watchlist"
+              title="My Watchlist"
             >
-              {isOpen
-                ? <X    style={{ width: '15px', height: '15px' }} />
-                : <Menu style={{ width: '15px', height: '15px' }} />
-              }
+              <Bookmark className="w-4 h-4" />
+              {watchlist.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[17px] h-[17px] px-1 text-[10px] font-bold rounded-full bg-amber-400 text-black">
+                  {watchlist.length}
+                </span>
+              )}
+            </button>
+
+            {/* Menu Toggle */}
+            <button
+              onClick={() => {
+                soundEffects.playHoverTick();
+                setIsOpen(prev => !prev);
+              }}
+              className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-white/80 hover:text-white transition-colors"
+              aria-label="Toggle Menu"
+            >
+              {isOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
           </div>
         </div>
-      </div>
 
-      {/* ── Mobile drawer ── */}
-      {isOpen && (
-        <div style={{
-          background: 'rgba(8,8,8,0.98)',
-          backdropFilter: 'blur(16px)',
-          borderBottom: '1px solid var(--cinema-border)',
-        }}>
-          <div style={{
-            height: '1px',
-            background: 'linear-gradient(90deg, var(--cinema-gold) 0%, transparent 60%)',
-            opacity: 0.3,
-          }} />
-          <div className="container mx-auto px-4 py-4" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            {navItems.map(({ path, label, Icon }) => (
-              <Link key={path} to={path} onClick={handleNavClick} style={{ textDecoration: 'none' }}>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: '0.75rem',
-                  padding: '0.75rem 1rem',
-                  borderRadius: '3px',
-                  background: isActive(path) ? 'rgba(201,169,110,0.07)' : 'transparent',
-                  borderLeft: isActive(path) ? '1px solid rgba(201,169,110,0.4)' : '1px solid transparent',
-                  transition: 'background 0.2s',
-                }}>
-                  <Icon style={{
-                    width: '15px', height: '15px',
-                    color: isActive(path) ? 'var(--cinema-gold)' : 'var(--cinema-muted)',
-                    flexShrink: 0,
-                  }} />
-                  <span style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '11px', fontWeight: 500,
-                    letterSpacing: '0.12em', textTransform: 'uppercase',
-                    color: isActive(path) ? '#fff' : 'var(--cinema-muted)',
-                  }}>
-                    {label}
-                  </span>
+        {/* ── Slide-Down Menu Drawer ── */}
+        {isOpen && (
+          <div className="glass-header border-t border-white/[0.08] px-4 py-5 mt-2 animate-in fade-in slide-in-from-top-4 duration-200">
+            <div className="max-w-7xl mx-auto space-y-4">
+              {/* Mobile primary nav links */}
+              <div className="md:hidden flex flex-col gap-1.5 pb-3 border-b border-white/10">
+                {navItems.map(({ path, label }) => {
+                  const active = isActive(path);
+                  return (
+                    <Link
+                      key={path}
+                      to={path}
+                      onClick={() => {
+                        soundEffects.playHoverTick();
+                        setIsOpen(false);
+                      }}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        active
+                          ? 'bg-amber-400 text-black font-bold'
+                          : 'text-white/70 hover:text-white hover:bg-white/[0.06]'
+                      }`}
+                    >
+                      {label}
+                    </Link>
+                  );
+                })}
+              </div>
+
+              {/* Extra Cinema Features */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <Link
+                  to="/time-machine"
+                  onClick={() => {
+                    soundEffects.playHoverTick();
+                    setIsOpen(false);
+                  }}
+                  className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/80 transition-all"
+                >
+                  <Hourglass className="w-4 h-4 text-amber-400" />
+                  <span>Time Machine</span>
+                </Link>
+
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    setShowSwiperModal(true);
+                  }}
+                  className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/80 transition-all text-left"
+                >
+                  <Flame className="w-4 h-4 text-amber-400" />
+                  <span>Reel Swiper</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    setShowRouletteModal(true);
+                  }}
+                  className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/80 transition-all text-left"
+                >
+                  <Dices className="w-4 h-4 text-amber-400" />
+                  <span>Cinema Roulette</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    setShowDnaModal(true);
+                  }}
+                  className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/80 transition-all text-left"
+                >
+                  <Dna className="w-4 h-4 text-amber-400" />
+                  <span>Cinephile DNA</span>
+                </button>
+
+                <button
+                  onClick={toggleAudio}
+                  className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/80 transition-all text-left"
+                >
+                  {soundOn ? <Volume2 className="w-4 h-4 text-amber-400" /> : <VolumeX className="w-4 h-4 text-white/40" />}
+                  <span>{soundOn ? 'Sound: ON' : 'Sound: OFF'}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    setShowShortcutsModal(true);
+                  }}
+                  className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/80 transition-all text-left"
+                >
+                  <HelpCircle className="w-4 h-4 text-white/50" />
+                  <span>Shortcuts</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* ── Fixed Mobile Bottom Navigation Bar (Android & iOS) ── */}
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#07080b]/95 backdrop-blur-2xl border-t border-white/[0.08] shadow-[0_-8px_32px_rgba(0,0,0,0.85)] safe-bottom-nav"
+        aria-label="Mobile Navigation"
+      >
+        <div className="grid grid-cols-5 h-[60px] items-center px-1">
+          {/* 1. Home */}
+          <Link
+            to="/"
+            onClick={() => soundEffects.playHoverTick()}
+            className={`flex flex-col items-center justify-center h-full gap-1 touch-feedback ${
+              isActive('/') ? 'text-amber-400 font-bold' : 'text-white/50 hover:text-white/80'
+            }`}
+          >
+            <Home className={`w-5 h-5 transition-transform ${isActive('/') ? 'scale-110 stroke-[2.5]' : 'stroke-[1.75]'}`} />
+            <span className="text-[10px] tracking-tight">Home</span>
+          </Link>
+
+          {/* 2. Movies */}
+          <Link
+            to="/movies"
+            onClick={() => soundEffects.playHoverTick()}
+            className={`flex flex-col items-center justify-center h-full gap-1 touch-feedback ${
+              isActive('/movies') ? 'text-amber-400 font-bold' : 'text-white/50 hover:text-white/80'
+            }`}
+          >
+            <Film className={`w-5 h-5 transition-transform ${isActive('/movies') ? 'scale-110 stroke-[2.5]' : 'stroke-[1.75]'}`} />
+            <span className="text-[10px] tracking-tight">Movies</span>
+          </Link>
+
+          {/* 3. TV */}
+          <Link
+            to="/tv"
+            onClick={() => soundEffects.playHoverTick()}
+            className={`flex flex-col items-center justify-center h-full gap-1 touch-feedback ${
+              isActive('/tv') ? 'text-amber-400 font-bold' : 'text-white/50 hover:text-white/80'
+            }`}
+          >
+            <Tv className={`w-5 h-5 transition-transform ${isActive('/tv') ? 'scale-110 stroke-[2.5]' : 'stroke-[1.75]'}`} />
+            <span className="text-[10px] tracking-tight">Series</span>
+          </Link>
+
+          {/* 4. Search */}
+          <Link
+            to="/search"
+            onClick={() => soundEffects.playHoverTick()}
+            className={`flex flex-col items-center justify-center h-full gap-1 touch-feedback ${
+              isActive('/search') ? 'text-amber-400 font-bold' : 'text-white/50 hover:text-white/80'
+            }`}
+          >
+            <Search className={`w-5 h-5 transition-transform ${isActive('/search') ? 'scale-110 stroke-[2.5]' : 'stroke-[1.75]'}`} />
+            <span className="text-[10px] tracking-tight">Search</span>
+          </Link>
+
+          {/* 5. Watchlist / Saved */}
+          <button
+            onClick={() => {
+              soundEffects.playHoverTick();
+              setShowWatchlistModal(true);
+            }}
+            className="relative flex flex-col items-center justify-center h-full gap-1 touch-feedback text-white/50 hover:text-white/80"
+          >
+            <div className="relative">
+              <Bookmark className="w-5 h-5 stroke-[1.75]" />
+              {watchlist.length > 0 && (
+                <span className="absolute -top-1 -right-2.5 flex items-center justify-center min-w-[15px] h-[15px] px-1 text-[9px] font-extrabold rounded-full bg-amber-400 text-black shadow-sm">
+                  {watchlist.length}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] font-semibold tracking-tight">Saved</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* ── Watchlist Modal ── */}
+      {showWatchlistModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200">
+          <div className="relative w-full max-w-xl max-h-[85vh] flex flex-col rounded-3xl bg-[#0e1118] border border-white/10 shadow-2xl shadow-black overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/[0.02]">
+              <div className="flex items-center gap-2">
+                <Bookmark className="w-5 h-5 text-amber-400" />
+                <h3 className="font-display font-bold text-lg text-white">My Watchlist</h3>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-400 font-semibold">
+                  {watchlist.length}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowWatchlistModal(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {watchlist.length === 0 ? (
+                <div className="text-center py-12 flex flex-col items-center">
+                  <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 text-white/30 border border-white/10">
+                    <Bookmark className="w-7 h-7" />
+                  </div>
+                  <h4 className="font-display font-semibold text-white text-base mb-1">
+                    Your Watchlist is Empty
+                  </h4>
+                  <p className="text-sm text-white/50 max-w-xs">
+                    Bookmark your favorite movies and shows to easily pick up where you left off.
+                  </p>
                 </div>
-              </Link>
-            ))}
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {watchlist.map(item => (
+                    <div
+                      key={item.id}
+                      className="group flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 hover:border-amber-400/30 transition-all cursor-pointer"
+                      onClick={() => {
+                        setShowWatchlistModal(false);
+                        navigate(`/${item.media_type || 'movie'}/${item.id}`);
+                      }}
+                    >
+                      <img
+                        src={item.poster_path ? `https://image.tmdb.org/t/p/w200${item.poster_path}` : ''}
+                        alt={item.title}
+                        className="w-14 h-20 object-cover rounded-lg flex-shrink-0 bg-neutral-900 border border-white/10"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-display font-semibold text-sm text-white truncate group-hover:text-amber-400 transition-colors">
+                          {item.title}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-white/10 text-white/70">
+                            {item.media_type === 'tv' ? 'TV' : 'Movie'}
+                          </span>
+                          {item.vote_average && (
+                            <span className="text-[11px] text-amber-400 font-semibold">
+                              ★ {item.vote_average.toFixed(1)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          soundEffects.playHoverTick();
+                          removeFromWatchlist(item.id);
+                        }}
+                        className="p-2 text-white/30 hover:text-red-400 transition-colors rounded-lg hover:bg-white/5"
+                        title="Remove from watchlist"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
-    </nav>
+
+      {/* ── Cinema Roulette Modal ── */}
+      <CinemaRouletteModal
+        isOpen={showRouletteModal}
+        onClose={() => setShowRouletteModal(false)}
+      />
+
+      {/* ── Keyboard Shortcuts Modal ── */}
+      <KeyboardShortcutsModal
+        isOpen={showShortcutsModal}
+        onClose={() => setShowShortcutsModal(false)}
+      />
+
+      {/* ── Reel Swiper Modal ── */}
+      <ReelSwiperModal
+        isOpen={showSwiperModal}
+        onClose={() => setShowSwiperModal(false)}
+      />
+
+      {/* ── Cinephile DNA Modal ── */}
+      <CineDnaModal
+        isOpen={showDnaModal}
+        onClose={() => setShowDnaModal(false)}
+      />
+
+      {/* ── Midnight Cult Vault Modal ── */}
+      <MidnightVaultModal
+        isOpen={showVaultModal}
+        onClose={() => setShowVaultModal(false)}
+      />
+    </>
   );
 };

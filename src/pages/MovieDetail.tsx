@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Star, Calendar, Clock, Heart, Bookmark, Play, X, Youtube } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Star, Calendar, Clock, Bookmark, Check, Play, ArrowLeft, Youtube, Share2, Sparkles, X, Zap, Brain, Heart, Smile, Compass } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
-import { BackButton } from '@/components/BackButton';
 import { tmdb, type MovieDetail, type CastMember } from '@/services/tmdb';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VideoSourceSelector } from '@/components/VideoSourceSelector';
 import { videoSources, type VideoSource } from '@/types/videoSources';
-import { LoaderThree } from '@/components/loaders';
+import { useWatchlist } from '@/hooks/useWatchlist';
+import { calculateMovieVibe, calculateIntelligentScore } from '@/lib/cineAiEngine';
+import { toast } from 'sonner';
 
-interface Video {
+interface VideoTrailer {
   id: string;
   key: string;
   name: string;
@@ -19,15 +19,17 @@ interface Video {
 
 const MovieDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [movie, setMovie] = useState<MovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPlayer, setShowPlayer] = useState(false);
+  const [lightsOff, setLightsOff] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [selectedSource, setSelectedSource] = useState<VideoSource>(videoSources[0]);
-  const [trailer, setTrailer] = useState<Video | null>(null);
+  const [trailer, setTrailer] = useState<VideoTrailer | null>(null);
   const [cast, setCast] = useState<CastMember[]>([]);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isWatchlist, setIsWatchlist] = useState(false);
+
+  const { isInWatchlist, toggleWatchlist } = useWatchlist();
 
   useEffect(() => {
     const loadMovie = async () => {
@@ -39,14 +41,14 @@ const MovieDetailPage = () => {
 
         const videosData = await tmdb.getVideos(parseInt(id), 'movie');
         const officialTrailer = videosData.results?.find(
-          (v: Video) => v.type === 'Trailer' && v.site === 'YouTube'
+          (v: VideoTrailer) => (v.type === 'Trailer' || v.type === 'Teaser') && v.site === 'YouTube'
         );
         setTrailer(officialTrailer || null);
 
         const creditsData = await tmdb.getCredits(parseInt(id), 'movie');
-        setCast(creditsData.cast?.slice(0, 10) || []);
+        setCast(creditsData.cast?.slice(0, 12) || []);
       } catch (error) {
-        console.error('Error loading movie:', error);
+        console.error('Error loading movie details:', error);
       } finally {
         setLoading(false);
       }
@@ -60,391 +62,426 @@ const MovieDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen" style={{ background: 'var(--cinema-black)' }}>
-        <Navbar />
-        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <LoaderThree />
-        </div>
+      <div className="min-h-screen bg-[#07080b] flex items-center justify-center">
+        <div className="w-14 h-14 rounded-full border-2 border-amber-400/20 border-t-amber-400 animate-spin" />
       </div>
     );
   }
 
-  if (!movie) return null;
+  if (!movie) {
+    return (
+      <div className="min-h-screen bg-[#07080b] flex flex-col items-center justify-center text-center p-4">
+        <h2 className="text-2xl font-bold text-white mb-2">Movie Not Found</h2>
+        <button onClick={() => navigate('/')} className="btn-cinema-gold mt-4">
+          Return Home
+        </button>
+      </div>
+    );
+  }
+
+  const inWatchlist = isInWatchlist(movie.id);
+  const year = movie.release_date ? new Date(movie.release_date).getFullYear() : null;
+  const rating = movie.vote_average ? movie.vote_average.toFixed(1) : null;
+  const runtimeHours = movie.runtime ? Math.floor(movie.runtime / 60) : 0;
+  const runtimeMinutes = movie.runtime ? movie.runtime % 60 : 0;
+
+  const handleShare = async () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `${movie.title} — MovieGuy`,
+          text: `Check out ${movie.title} on MovieGuy in 4K!`,
+          url: window.location.href,
+        });
+        return;
+      } catch {
+        // Share dismissed
+      }
+    }
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('Link copied to clipboard!');
+    }
+  };
+
+  const handleToggleWatchlist = () => {
+    const added = toggleWatchlist({
+      id: movie.id,
+      title: movie.title,
+      poster_path: movie.poster_path,
+      backdrop_path: movie.backdrop_path,
+      vote_average: movie.vote_average,
+      release_date: movie.release_date,
+      media_type: 'movie',
+    });
+    if (added) {
+      toast.success('Added to your Watchlist');
+    } else {
+      toast.info('Removed from Watchlist');
+    }
+  };
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--cinema-black)' }}>
+    <div className="min-h-screen bg-[#07080b] text-[#f8fafc] overflow-x-hidden selection:bg-amber-400 selection:text-black">
       <Navbar />
-      <BackButton />
 
-      {/* ── Player view ── */}
+      {/* ── Theater View (Player Active) ── */}
       {showPlayer ? (
-        <div className="pt-16 min-h-screen">
-          <div className="container mx-auto px-4 py-6">
+        <div className="pt-20 pb-16 min-h-screen max-w-6xl mx-auto px-4 sm:px-6 relative">
+          {/* Blackout Immersion Layer when Lights-Out is on */}
+          {lightsOff && (
+            <div className="fixed inset-0 z-30 bg-black/95 transition-opacity duration-500 pointer-events-none" />
+          )}
+
+          {/* Top Bar inside Theater */}
+          <div className="flex items-center justify-between mb-4 relative z-40">
             <button
-              className="btn-ghost mb-6"
-              onClick={() => setShowPlayer(false)}
+              onClick={() => {
+                setShowPlayer(false);
+                setLightsOff(false);
+              }}
+              className="flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white transition-all"
             >
-              ← Back to Details
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Movie Info</span>
             </button>
 
-            <div
-              className="w-full aspect-video mb-6 overflow-hidden"
-              style={{ borderRadius: '3px', border: '1px solid var(--cinema-border)' }}
-            >
-              <iframe
-                src={selectedSource.getMovieUrl(movie.id)}
-                className="w-full h-full"
-                allowFullScreen
-                title={movie.title}
-              />
-            </div>
+            <div className="flex items-center gap-3">
+              {/* Lights-Out Toggle */}
+              <button
+                onClick={() => setLightsOff(prev => !prev)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                  lightsOff
+                    ? 'bg-amber-400 text-black border-amber-400 shadow-lg shadow-amber-400/30'
+                    : 'bg-white/5 text-white/70 hover:text-white border-white/10'
+                }`}
+                title="Cinema Lights Out Mode"
+              >
+                <span>{lightsOff ? '💡 Lights On' : '🌙 Lights Out'}</span>
+              </button>
 
+              <div className="hidden sm:flex items-center gap-2">
+                <span className="text-xs text-white/50">Now Playing:</span>
+                <span className="text-xs font-bold text-amber-400 truncate max-w-xs">{movie.title}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Cinema Frame */}
+          <div
+            className={`relative w-full aspect-video rounded-2xl overflow-hidden bg-black transition-all duration-500 z-40 ${
+              lightsOff
+                ? 'border-2 border-amber-400 shadow-[0_0_90px_rgba(245,158,11,0.35)] scale-[1.01]'
+                : 'border border-amber-400/30 shadow-2xl shadow-amber-500/10'
+            }`}
+          >
+            <iframe
+              src={selectedSource.getMovieUrl(movie.id)}
+              className="w-full h-full"
+              allowFullScreen
+              title={movie.title}
+            />
+          </div>
+
+          {/* Server Switcher */}
+          <div className="relative z-40">
             <VideoSourceSelector
               selectedSource={selectedSource}
               onSourceChange={setSelectedSource}
             />
           </div>
         </div>
-
       ) : (
-        <div className="pt-20">
-
-          {/* ── Backdrop ── */}
-          <div className="relative h-[300px] md:h-[520px] overflow-hidden">
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${tmdb.getImageUrl(movie.backdrop_path, 'original')})` }}
-            >
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: 'linear-gradient(to bottom, rgba(8,8,8,0.25) 0%, rgba(8,8,8,0.55) 55%, #080808 100%)',
-                }}
-              />
-            </div>
+        /* ── Movie Details Showcase ── */
+        <div className="relative">
+          {/* Ambient Backdrop Banner */}
+          <div className="relative h-[480px] sm:h-[600px] w-full overflow-hidden">
+            <img
+              src={tmdb.getImageUrl(movie.backdrop_path, 'original')}
+              alt={movie.title}
+              className="w-full h-full object-cover object-center"
+            />
+            {/* Dark Cinematic Vignettes */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#07080b] via-[#07080b]/75 to-black/40" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#07080b] via-transparent to-[#07080b]/80" />
           </div>
 
-          {/* ── Hero content ── */}
-          <div className="container mx-auto px-4 -mt-36 relative z-10 pb-12">
-            <div className="grid grid-cols-1 md:grid-cols-[240px,1fr] gap-10 items-end">
-
-              {/* Poster */}
-              <div className="flex justify-center md:justify-start">
-                <div
-                  className="w-full max-w-[180px] md:max-w-[240px] overflow-hidden transition-transform duration-300 hover:scale-[1.02]"
-                  style={{
-                    borderRadius: '3px',
-                    border: '1px solid var(--cinema-border)',
-                    boxShadow: '0 40px 80px rgba(0,0,0,0.8)',
-                  }}
-                >
+          {/* Details Content Container */}
+          <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-44 sm:-mt-64 pb-28 md:pb-20">
+            <div className="flex flex-col md:flex-row gap-8 lg:gap-12 items-start">
+              {/* Poster Card */}
+              <div className="w-48 sm:w-64 md:w-72 flex-shrink-0 mx-auto md:mx-0">
+                <div className="relative aspect-[2/3] rounded-2xl overflow-hidden border-2 border-white/15 shadow-2xl shadow-black/90 group">
                   <img
                     src={tmdb.getImageUrl(movie.poster_path, 'w500')}
                     alt={movie.title}
-                    className="w-full block"
+                    className="w-full h-full object-cover"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-4">
+                    <button
+                      onClick={() => setShowPlayer(true)}
+                      className="btn-cinema-gold w-full text-xs py-2.5 touch-feedback"
+                    >
+                      <Play className="w-4 h-4 fill-black" />
+                      Stream Now
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Info */}
-              <div>
-                {/* Title */}
-                <h1 className="detail-title">{movie.title}</h1>
-
-                {/* Gold rule */}
-                <span className="detail-title-rule" />
-
-                {/* Meta pills */}
-                <div className="detail-meta mb-5">
-                  {movie.release_date && (
-                    <span className="detail-meta-item">
-                      <Calendar style={{ width: '12px', height: '12px', opacity: 0.6 }} />
-                      {new Date(movie.release_date).getFullYear()}
+              {/* Movie Info Right Column */}
+              <div className="flex-1 min-w-0">
+                {/* Meta Badges */}
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-amber-400 text-black">
+                    4K ULTRA HD
+                  </span>
+                  {rating && (
+                    <span className="flex items-center gap-1 text-xs font-bold px-3 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-amber-400">
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      {rating} / 10
                     </span>
                   )}
-                  {movie.runtime && (
-                    <span className="detail-meta-item">
-                      <Clock style={{ width: '12px', height: '12px', opacity: 0.6 }} />
-                      {movie.runtime}m
+                  {year && (
+                    <span className="flex items-center gap-1 text-xs text-white/70 px-2.5 py-0.5 rounded-full bg-white/[0.06] border border-white/10">
+                      <Calendar className="w-3 h-3 text-white/50" />
+                      {year}
                     </span>
                   )}
-                  {movie.vote_average && (
-                    <span className="detail-meta-item rating">
-                      <Star style={{ width: '12px', height: '12px', fill: 'var(--cinema-gold)', color: 'var(--cinema-gold)' }} />
-                      {movie.vote_average.toFixed(1)}
+                  {movie.runtime ? (
+                    <span className="flex items-center gap-1 text-xs text-white/70 px-2.5 py-0.5 rounded-full bg-white/[0.06] border border-white/10">
+                      <Clock className="w-3 h-3 text-white/50" />
+                      {runtimeHours}h {runtimeMinutes}m
                     </span>
-                  )}
+                  ) : null}
                 </div>
 
-                {/* Genre tags */}
-                {movie.genres && movie.genres.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {movie.genres.map((genre) => (
-                      <span key={genre.id} className="detail-genre">
-                        {genre.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {/* Title */}
+                <h1 className="font-display font-extrabold text-3xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[1.08] mb-4">
+                  {movie.title}
+                </h1>
 
-                {/* Overview */}
-                <p className="detail-overview mb-8">
-                  {movie.overview}
-                </p>
+                {/* Genres */}
+                <div className="flex flex-wrap items-center gap-2 mb-6">
+                  {movie.genres?.map(genre => (
+                    <span
+                      key={genre.id}
+                      className="text-xs font-semibold px-3 py-1 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-white/80 transition-colors"
+                    >
+                      {genre.name}
+                    </span>
+                  ))}
+                </div>
 
-                {/* Action buttons */}
-                <div className="flex flex-wrap items-center gap-3">
-                  <button className="btn-watch" onClick={() => setShowPlayer(true)}>
-                    <Play style={{ width: '13px', height: '13px', fill: 'currentColor' }} />
-                    Watch Now
+                {/* Action Buttons Toolbar */}
+                <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 mb-8">
+                  <button
+                    onClick={() => setShowPlayer(true)}
+                    className="btn-cinema-gold text-sm px-6 py-3 flex-1 sm:flex-initial justify-center touch-feedback min-h-[46px]"
+                  >
+                    <Play className="w-4 h-4 fill-black text-black" />
+                    <span>Watch Movie</span>
                   </button>
 
                   {trailer && (
-                    <button className="btn-ghost" onClick={() => setShowTrailer(true)}>
-                      <Youtube style={{ width: '14px', height: '14px' }} />
-                      Trailer
+                    <button
+                      onClick={() => setShowTrailer(true)}
+                      className="btn-cinema-ghost text-sm px-5 py-3 flex-1 sm:flex-initial justify-center touch-feedback min-h-[46px]"
+                    >
+                      <Youtube className="w-4 h-4 text-red-500" />
+                      <span>Trailer</span>
                     </button>
                   )}
 
                   <button
-                    className={`btn-icon ${isFavorite ? 'active-red' : ''}`}
-                    onClick={() => setIsFavorite(!isFavorite)}
-                    aria-label="Favourite"
+                    onClick={handleToggleWatchlist}
+                    className={`p-3 min-w-[46px] min-h-[46px] rounded-full border touch-feedback flex items-center justify-center transition-all ${
+                      inWatchlist
+                        ? 'bg-amber-400/20 border-amber-400 text-amber-400'
+                        : 'bg-white/[0.06] border-white/15 text-white hover:bg-white/[0.12]'
+                    }`}
+                    title={inWatchlist ? 'In Watchlist' : 'Add to Watchlist'}
                   >
-                    <Heart style={{ width: '15px', height: '15px', fill: isFavorite ? 'currentColor' : 'none' }} />
+                    {inWatchlist ? <Check className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
                   </button>
 
                   <button
-                    className={`btn-icon ${isWatchlist ? 'active-gold' : ''}`}
-                    onClick={() => setIsWatchlist(!isWatchlist)}
-                    aria-label="Add to watchlist"
+                    onClick={handleShare}
+                    className="p-3 min-w-[46px] min-h-[46px] rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white/80 hover:text-white transition-all touch-feedback flex items-center justify-center"
+                    title="Share Movie"
                   >
-                    <Bookmark style={{ width: '15px', height: '15px', fill: isWatchlist ? 'currentColor' : 'none' }} />
+                    <Share2 className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* ── Tabs section ── */}
-          <div className="container mx-auto px-4 py-12">
-            {/* Section eyebrow */}
-            <div className="flex items-center gap-4 mb-8">
-              <span className="eyebrow">More Info</span>
-              <div className="cinema-divider" />
-            </div>
+                {/* Overview */}
+                <div className="mb-6">
+                  <h3 className="font-display font-bold text-lg text-white mb-2 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    Storyline
+                  </h3>
+                  <p className="text-white/70 text-sm sm:text-base leading-relaxed max-w-2xl font-light">
+                    {movie.overview || 'No overview available for this title.'}
+                  </p>
+                </div>
 
-            <Tabs defaultValue="about" className="w-full">
-              <TabsList
-                className="mb-8"
-                style={{
-                  background: 'var(--cinema-surface)',
-                  border: '1px solid var(--cinema-border)',
-                  borderRadius: '3px',
-                  padding: '3px',
-                }}
-              >
-                <TabsTrigger
-                  value="about"
-                  className="data-[state=active]:bg-white/10 data-[state=active]:text-white"
-                  style={{ fontFamily: 'var(--font-body)', fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--cinema-muted)' }}
-                >
-                  About
-                </TabsTrigger>
-                <TabsTrigger
-                  value="cast"
-                  className="data-[state=active]:bg-white/10 data-[state=active]:text-white"
-                  style={{ fontFamily: 'var(--font-body)', fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--cinema-muted)' }}
-                >
-                  Cast
-                </TabsTrigger>
-              </TabsList>
+                {/* ── AI Vibe Radar & Pacing Card ── */}
+                {(() => {
+                  const vibe = calculateMovieVibe(movie, movie.runtime);
+                  const intel = calculateIntelligentScore(movie, movie.runtime);
+                  return (
+                    <div className="mb-8 p-5 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-xl max-w-2xl">
+                      {/* Smart Intelligent Score Banner */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-white/10">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-amber-400/10 border border-amber-400/25 flex items-center justify-center">
+                            <Sparkles className="w-5 h-5 text-amber-400" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-display font-bold text-base text-white">
+                                Smart Intelligent Score
+                              </h3>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-bold border border-amber-400/30">
+                                GRADE {intel.grade}
+                              </span>
+                            </div>
+                            <p className="text-xs text-white/50 font-light mt-0.5">
+                              {intel.verdict}
+                            </p>
+                          </div>
+                        </div>
 
-              {/* About */}
-              <TabsContent value="about" className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
+                        <div className="flex items-center gap-2 self-start sm:self-auto bg-black/50 px-4 py-2 rounded-2xl border border-white/10">
+                          <span className="text-2xl font-display font-black bg-gradient-to-r from-amber-400 to-amber-200 bg-clip-text text-transparent">
+                            {intel.overallScore}
+                          </span>
+                          <span className="text-xs text-white/40 font-mono">/100</span>
+                        </div>
+                      </div>
 
-                  <div className="cinema-card p-6">
-                    <h3
-                      style={{
-                        fontFamily: 'var(--font-display)',
-                        fontSize: '1.2rem',
-                        fontWeight: 300,
-                        fontStyle: 'italic',
-                        letterSpacing: '0.04em',
-                        color: '#fff',
-                        marginBottom: '1.25rem',
-                      }}
-                    >
-                      Film Information
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-mono uppercase tracking-wider text-white/50 flex items-center gap-1.5">
+                          <Compass className="w-3.5 h-3.5 text-purple-400" />
+                          Cinema Vibe Radar
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-semibold border border-purple-500/30">
+                          {vibe.pacing}
+                        </span>
+                      </div>
+
+                      {/* 4 Metric Bars */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {/* Tension */}
+                        <div className="p-3 rounded-2xl bg-black/40 border border-white/5 text-center">
+                          <div className="flex items-center justify-center gap-1 text-[11px] text-amber-400 font-bold mb-1">
+                            <Zap className="w-3 h-3" />
+                            Tension
+                          </div>
+                          <div className="font-display font-extrabold text-lg text-white">
+                            {vibe.vibeScores.tension}<span className="text-xs text-white/40">/10</span>
+                          </div>
+                          <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
+                            <div className="h-full bg-amber-400 rounded-full" style={{ width: `${vibe.vibeScores.tension * 10}%` }} />
+                          </div>
+                        </div>
+
+                        {/* Mind-Bend */}
+                        <div className="p-3 rounded-2xl bg-black/40 border border-white/5 text-center">
+                          <div className="flex items-center justify-center gap-1 text-[11px] text-purple-400 font-bold mb-1">
+                            <Brain className="w-3 h-3" />
+                            Mind-Bend
+                          </div>
+                          <div className="font-display font-extrabold text-lg text-white">
+                            {vibe.vibeScores.mindBend}<span className="text-xs text-white/40">/10</span>
+                          </div>
+                          <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
+                            <div className="h-full bg-purple-400 rounded-full" style={{ width: `${vibe.vibeScores.mindBend * 10}%` }} />
+                          </div>
+                        </div>
+
+                        {/* Emotion */}
+                        <div className="p-3 rounded-2xl bg-black/40 border border-white/5 text-center">
+                          <div className="flex items-center justify-center gap-1 text-[11px] text-pink-400 font-bold mb-1">
+                            <Heart className="w-3 h-3" />
+                            Emotion
+                          </div>
+                          <div className="font-display font-extrabold text-lg text-white">
+                            {vibe.vibeScores.emotion}<span className="text-xs text-white/40">/10</span>
+                          </div>
+                          <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
+                            <div className="h-full bg-pink-400 rounded-full" style={{ width: `${vibe.vibeScores.emotion * 10}%` }} />
+                          </div>
+                        </div>
+
+                        {/* Humor */}
+                        <div className="p-3 rounded-2xl bg-black/40 border border-white/5 text-center">
+                          <div className="flex items-center justify-center gap-1 text-[11px] text-yellow-400 font-bold mb-1">
+                            <Smile className="w-3 h-3" />
+                            Humor
+                          </div>
+                          <div className="font-display font-extrabold text-lg text-white">
+                            {vibe.vibeScores.humor}<span className="text-xs text-white/40">/10</span>
+                          </div>
+                          <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
+                            <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${vibe.vibeScores.humor * 10}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Cast Members Showcase */}
+                {cast.length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="font-display font-bold text-lg text-white mb-4">
+                      Top Cast
                     </h3>
-
-                    {movie.release_date && (
-                      <div className="info-row">
-                        <span className="info-label">Release Date</span>
-                        <span className="info-value">
-                          {new Date(movie.release_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                        </span>
-                      </div>
-                    )}
-                    {movie.runtime && (
-                      <div className="info-row">
-                        <span className="info-label">Runtime</span>
-                        <span className="info-value">{movie.runtime} minutes</span>
-                      </div>
-                    )}
-                    {movie.vote_average && (
-                      <div className="info-row">
-                        <span className="info-label">Rating</span>
-                        <span className="info-value" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <Star style={{ width: '13px', height: '13px', fill: 'var(--cinema-gold)', color: 'var(--cinema-gold)' }} />
-                          <span style={{ color: 'var(--cinema-gold)' }}>{movie.vote_average.toFixed(1)}</span>
-                          <span style={{ color: 'var(--cinema-muted)' }}>/10</span>
-                        </span>
-                      </div>
-                    )}
-                    {movie.budget && movie.budget > 0 && (
-                      <div className="info-row">
-                        <span className="info-label">Budget</span>
-                        <span className="info-value">${(movie.budget / 1000000).toFixed(1)}M</span>
-                      </div>
-                    )}
-                    {movie.revenue && movie.revenue > 0 && (
-                      <div className="info-row" style={{ borderBottom: 'none' }}>
-                        <span className="info-label">Revenue</span>
-                        <span className="info-value">${(movie.revenue / 1000000).toFixed(1)}M</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="cinema-card p-6">
-                    <h3
-                      style={{
-                        fontFamily: 'var(--font-display)',
-                        fontSize: '1.2rem',
-                        fontWeight: 300,
-                        fontStyle: 'italic',
-                        letterSpacing: '0.04em',
-                        color: '#fff',
-                        marginBottom: '1.25rem',
-                      }}
-                    >
-                      Genres
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {movie.genres?.map((genre) => (
-                        <span key={genre.id} className="detail-genre">
-                          {genre.name}
-                        </span>
+                    <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
+                      {cast.map(member => (
+                        <div key={member.id} className="flex-none w-24 text-center group">
+                          <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border-2 border-white/10 group-hover:border-amber-400 transition-colors bg-neutral-900 shadow-lg">
+                            <img
+                              src={member.profile_path ? `https://image.tmdb.org/t/p/w200${member.profile_path}` : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
+                              alt={member.name}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            />
+                          </div>
+                          <span className="font-display font-semibold text-xs text-white block mt-2 truncate">
+                            {member.name}
+                          </span>
+                          <span className="text-[10px] text-white/40 block truncate">
+                            {member.character}
+                          </span>
+                        </div>
                       ))}
                     </div>
                   </div>
-                </div>
-              </TabsContent>
-
-              {/* Cast */}
-              <TabsContent value="cast" className="space-y-6">
-                <h2
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 'clamp(1.4rem, 2.5vw, 1.9rem)',
-                    fontWeight: 300,
-                    fontStyle: 'italic',
-                    letterSpacing: '0.02em',
-                    color: '#fff',
-                  }}
-                >
-                  Cast
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
-                  {cast.map((member) => (
-                    <div key={member.id} className="group space-y-2">
-                      <div
-                        className="relative aspect-[2/3] overflow-hidden"
-                        style={{
-                          borderRadius: '3px',
-                          border: '1px solid var(--cinema-border)',
-                          background: 'var(--cinema-surface)',
-                        }}
-                      >
-                        {member.profile_path ? (
-                          <img
-                            src={tmdb.getImageUrl(member.profile_path, 'w185')}
-                            alt={member.name}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center" style={{ color: 'var(--cinema-muted)', fontSize: '2rem' }}>
-                            👤
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p
-                          style={{
-                            fontFamily: 'var(--font-body)',
-                            fontSize: '13px',
-                            fontWeight: 400,
-                            color: 'var(--cinema-text)',
-                            overflow: 'hidden',
-                            whiteSpace: 'nowrap',
-                            textOverflow: 'ellipsis',
-                          }}
-                        >
-                          {member.name}
-                        </p>
-                        <p
-                          style={{
-                            fontFamily: 'var(--font-body)',
-                            fontSize: '11px',
-                            fontWeight: 300,
-                            letterSpacing: '0.03em',
-                            color: 'var(--cinema-muted)',
-                            marginTop: '2px',
-                            overflow: 'hidden',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                          }}
-                        >
-                          {member.character}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
-            </Tabs>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── Trailer modal ── */}
+      {/* ── Trailer Modal ── */}
       {showTrailer && trailer && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(8,8,8,0.96)', backdropFilter: 'blur(12px)' }}
-        >
-          <div className="relative w-full max-w-5xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl animate-in fade-in">
+          <div className="relative w-full max-w-4xl aspect-video rounded-2xl overflow-hidden border border-white/15 bg-black shadow-2xl">
             <button
-              className="btn-icon"
               onClick={() => setShowTrailer(false)}
-              style={{ position: 'absolute', top: '-3rem', right: 0 }}
+              className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-black/60 hover:bg-black/90 text-white border border-white/20 transition-all hover:scale-110"
               aria-label="Close trailer"
             >
-              <X style={{ width: '15px', height: '15px' }} />
+              <X className="w-5 h-5" />
             </button>
-            <div
-              className="w-full aspect-video overflow-hidden"
-              style={{ borderRadius: '3px', border: '1px solid var(--cinema-border)' }}
-            >
-              <iframe
-                src={`https://www.youtube.com/embed/${trailer.key}`}
-                className="w-full h-full"
-                allowFullScreen
-                title="Movie Trailer"
-              />
-            </div>
+            <iframe
+              src={`https://www.youtube.com/embed/${trailer.key}?autoplay=1`}
+              title="Official Trailer"
+              className="w-full h-full"
+              allowFullScreen
+            />
           </div>
         </div>
       )}

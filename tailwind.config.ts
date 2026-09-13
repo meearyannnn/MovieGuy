@@ -6,9 +6,10 @@ export default {
   prefix: "",
   theme: {
     fontFamily: {
-      sans: ["Inter var", "system-ui", "sans-serif"],
-      serif: ["Lora", "Georgia", "serif"],
-      display: ["Cal Sans", "Space Grotesk", "system-ui", "sans-serif"],
+      sans: ["'Plus Jakarta Sans'", "system-ui", "sans-serif"],
+      serif: ["'Instrument Serif'", "'Cormorant Garamond'", "Georgia", "serif"],
+      display: ["'Plus Jakarta Sans'", "'Outfit'", "sans-serif"],
+      cinema: ["'Cinzel'", "serif"],
       mono: ["Fira Code", "Menlo", "monospace"],
     },
     fontSize: {
