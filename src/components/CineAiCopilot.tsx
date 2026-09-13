@@ -108,11 +108,11 @@ export const CineAiCopilot = () => {
             soundEffects.playSwoosh();
             setIsOpen(true);
           }}
-          className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 w-12 h-12 rounded-full bg-[#0e1118]/95 hover:bg-purple-600/30 border border-white/15 hover:border-purple-400/50 backdrop-blur-xl shadow-2xl shadow-black flex items-center justify-center text-amber-400 hover:text-white transition-all duration-300 hover:scale-105 active:scale-95 group touch-feedback"
+          className="fixed bottom-[76px] right-3 sm:bottom-6 sm:right-6 z-40 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#0e1118]/85 hover:bg-[#0e1118] border border-white/15 hover:border-purple-400/50 backdrop-blur-xl shadow-xl shadow-black/80 flex items-center justify-center text-amber-400 hover:text-white transition-all duration-300 hover:scale-105 active:scale-95 group touch-feedback"
           aria-label="Open CineAI Copilot"
           title="Ask CineAI Copilot (Press C)"
         >
-          <Sparkles className="w-5 h-5 text-amber-400 group-hover:rotate-12 transition-transform" />
+          <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 group-hover:rotate-12 transition-transform" />
         </button>
       )}
 

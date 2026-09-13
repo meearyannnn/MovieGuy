@@ -238,7 +238,7 @@ const TVDetailPage = () => {
           </div>
 
           {/* Details Content Container */}
-          <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-44 sm:-mt-64 pb-28 md:pb-12">
+          <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-44 sm:-mt-64 pb-36 md:pb-16 w-full max-w-full overflow-hidden sm:overflow-visible">
             <div className="flex flex-col md:flex-row gap-8 lg:gap-12 items-start">
               {/* Poster Card */}
               <div className="w-48 sm:w-64 md:w-72 flex-shrink-0 mx-auto md:mx-0">
@@ -288,7 +288,7 @@ const TVDetailPage = () => {
                 </div>
 
                 {/* Title */}
-                <h1 className="font-display font-extrabold text-3xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[1.08] mb-4">
+                <h1 className="font-display font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white tracking-tight mb-4 drop-shadow-lg">
                   {show.name}
                 </h1>
 
@@ -304,45 +304,48 @@ const TVDetailPage = () => {
                   ))}
                 </div>
 
-                {/* Action Buttons Toolbar */}
-                <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 mb-8">
+                {/* Action Buttons Toolbar - Mobile optimized thumb row */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 mb-8 w-full max-w-full">
                   <button
                     onClick={() => playEpisode(1)}
-                    className="btn-cinema-gold text-sm px-6 py-3 flex-1 sm:flex-initial justify-center touch-feedback min-h-[46px]"
+                    className="btn-cinema-gold text-sm sm:text-base px-6 py-3.5 w-full sm:w-auto flex items-center justify-center gap-2.5 touch-feedback shadow-lg shadow-amber-500/20"
                   >
-                    <Play className="w-4 h-4 fill-black text-black" />
-                    <span>Watch S1 E1</span>
+                    <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-black text-black shrink-0" />
+                    <span className="font-bold">Watch S1 E1</span>
                   </button>
 
-                  {trailer && (
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    {trailer && (
+                      <button
+                        onClick={() => setShowTrailer(true)}
+                        className="btn-cinema-ghost text-xs sm:text-sm px-4 py-3 flex-1 sm:flex-initial items-center justify-center gap-1.5 touch-feedback min-h-[44px]"
+                      >
+                        <Youtube className="w-4 h-4 text-red-500 shrink-0" />
+                        <span>Trailer</span>
+                      </button>
+                    )}
+
                     <button
-                      onClick={() => setShowTrailer(true)}
-                      className="btn-cinema-ghost text-sm px-5 py-3 flex-1 sm:flex-initial justify-center touch-feedback min-h-[46px]"
+                      onClick={handleToggleWatchlist}
+                      className={`px-4 py-3 flex-1 sm:flex-initial min-h-[44px] rounded-full border touch-feedback flex items-center justify-center gap-1.5 transition-all text-xs sm:text-sm font-semibold ${
+                        inWatchlist
+                          ? 'bg-amber-400/20 border-amber-400 text-amber-400'
+                          : 'bg-white/[0.06] border-white/15 text-white hover:bg-white/[0.12]'
+                      }`}
+                      title={inWatchlist ? 'In Watchlist' : 'Add to Watchlist'}
                     >
-                      <Youtube className="w-4 h-4 text-red-500" />
-                      <span>Trailer</span>
+                      {inWatchlist ? <Check className="w-4 h-4 shrink-0" /> : <Bookmark className="w-4 h-4 shrink-0" />}
+                      <span>{inWatchlist ? 'Saved' : 'Watchlist'}</span>
                     </button>
-                  )}
 
-                  <button
-                    onClick={handleToggleWatchlist}
-                    className={`p-3 min-w-[46px] min-h-[46px] rounded-full border touch-feedback flex items-center justify-center transition-all ${
-                      inWatchlist
-                        ? 'bg-amber-400/20 border-amber-400 text-amber-400'
-                        : 'bg-white/[0.06] border-white/15 text-white hover:bg-white/[0.12]'
-                    }`}
-                    title={inWatchlist ? 'In Watchlist' : 'Add to Watchlist'}
-                  >
-                    {inWatchlist ? <Check className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
-                  </button>
-
-                  <button
-                    onClick={handleShare}
-                    className="p-3 min-w-[46px] min-h-[46px] rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white/80 hover:text-white transition-all touch-feedback flex items-center justify-center"
-                    title="Share Series"
-                  >
-                    <Share2 className="w-4 h-4" />
-                  </button>
+                    <button
+                      onClick={handleShare}
+                      className="p-3 min-w-[44px] min-h-[44px] rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white/80 hover:text-white transition-all touch-feedback flex items-center justify-center shrink-0"
+                      title="Share Series"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Storyline Overview */}
