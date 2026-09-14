@@ -366,18 +366,18 @@ const TVDetailPage = () => {
           })()}
 
           {/* ── In-Player Quick Episode Switcher ── */}
-          <div className="relative z-40 my-8 p-5 rounded-2xl bg-[#0e1118] border border-white/10 backdrop-blur-xl shadow-xl">
-            <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <h3 className="font-display font-bold text-sm text-white">
+          <div className="relative z-40 my-8 p-4 sm:p-5 rounded-2xl bg-[#0e1118] border border-white/10 backdrop-blur-xl shadow-xl w-full max-w-full min-w-0">
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <h3 className="font-display font-bold text-sm text-white truncate">
                   Episodes in Season {selectedSeason}
                 </h3>
-                <span className="text-[10px] text-white/40 font-mono">
+                <span className="text-[10px] text-white/40 font-mono shrink-0">
                   ({episodes.length} Episodes)
                 </span>
               </div>
               {seasonList.length > 1 && (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                   {seasonList.map(season => (
                     <button
                       key={season.id}
@@ -395,7 +395,7 @@ const TVDetailPage = () => {
               )}
             </div>
 
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide pt-1 pb-2">
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide pt-1 pb-2 w-full max-w-full min-w-0">
               {episodes.map(ep => {
                 const isCurrent = ep.episode_number === selectedEpisode;
                 return (
@@ -462,10 +462,10 @@ const TVDetailPage = () => {
           </div>
 
           {/* Details Content Container */}
-          <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-44 sm:-mt-64 pb-36 md:pb-16 w-full max-w-full overflow-hidden sm:overflow-visible">
-            <div className="flex flex-col md:flex-row gap-8 lg:gap-12 items-start">
+          <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-44 sm:-mt-64 pb-36 md:pb-16 w-full max-w-full min-w-0 overflow-hidden">
+            <div className="flex flex-col md:flex-row gap-8 lg:gap-12 items-start w-full max-w-full min-w-0">
               {/* Poster Card Column */}
-              <div className="w-full max-w-sm md:w-80 flex-shrink-0 mx-auto md:mx-0 space-y-4">
+              <div className="w-full max-w-sm md:w-80 flex-shrink-0 mx-auto md:mx-0 space-y-4 min-w-0">
                 <div className="w-52 sm:w-64 md:w-full mx-auto relative aspect-[2/3] rounded-2xl overflow-hidden border-2 border-white/15 shadow-2xl shadow-black/90 group">
                   <img
                     src={tmdb.getImageUrl(show.poster_path, 'w500')}
@@ -484,13 +484,13 @@ const TVDetailPage = () => {
                 </div>
 
                 {/* ── MovieGuy Meter (Under Poster - Desktop Only) ── */}
-                <div className="hidden md:block">
+                <div className="hidden md:block w-full max-w-full min-w-0">
                   <CineVibeMeter movie={show} />
                 </div>
               </div>
 
               {/* Show Info Right Column */}
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 w-full max-w-full">
                 {/* Meta Badges */}
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-amber-400 text-black">
@@ -517,7 +517,7 @@ const TVDetailPage = () => {
                 </div>
 
                 {/* Title */}
-                <h1 className="font-display font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white tracking-tight mb-4 drop-shadow-lg">
+                <h1 className="font-display font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white tracking-tight mb-4 drop-shadow-lg break-words">
                   {show.name}
                 </h1>
 
@@ -534,7 +534,7 @@ const TVDetailPage = () => {
                 </div>
 
                 {/* Action Buttons Toolbar - Mobile optimized thumb row */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 mb-8 w-full max-w-full">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 mb-8 w-full max-w-full min-w-0">
                   <button
                     onClick={() => playEpisode(1)}
                     className="btn-cinema-gold text-sm sm:text-base px-6 py-3.5 w-full sm:w-auto flex items-center justify-center gap-2.5 touch-feedback shadow-lg shadow-amber-500/20"
@@ -543,7 +543,7 @@ const TVDetailPage = () => {
                     <span className="font-bold">Watch S1 E1</span>
                   </button>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
                     {trailer && (
                       <button
                         onClick={() => setShowTrailer(true)}
@@ -578,38 +578,38 @@ const TVDetailPage = () => {
                 </div>
 
                 {/* Storyline Overview */}
-                <div className="mb-6">
+                <div className="mb-6 w-full max-w-full min-w-0">
                   <h3 className="font-display font-bold text-lg text-white mb-2 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-amber-400" />
                     Storyline
                   </h3>
-                  <p className="text-white/70 text-sm sm:text-base leading-relaxed max-w-2xl font-light">
+                  <p className="text-white/70 text-sm sm:text-base leading-relaxed max-w-2xl font-light break-words">
                     {show.overview || 'No overview available for this series.'}
                   </p>
                 </div>
 
                 {/* ── MovieGuy Meter (Mobile Only - Placed after Storyline so info comes first) ── */}
-                <div className="block md:hidden my-6">
+                <div className="block md:hidden my-6 w-full max-w-full min-w-0">
                   <CineVibeMeter movie={show} />
                 </div>
 
                 {/* ── Season Selector & Episode Cards (In empty area beside MovieGuy Meter) ── */}
-                <div className="mt-8 pt-6 border-t border-white/10">
-                  <div className="flex flex-col gap-3.5 mb-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <h2 className="font-display font-bold text-lg sm:text-xl text-white flex items-center gap-2">
-                          <Tv className="w-4 h-4 text-amber-400" />
+                <div className="mt-8 pt-6 border-t border-white/10 w-full max-w-full min-w-0">
+                  <div className="flex flex-col gap-3.5 mb-5 w-full max-w-full min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full max-w-full min-w-0">
+                      <div className="min-w-0">
+                        <h2 className="font-display font-bold text-lg sm:text-xl text-white flex items-center gap-2 truncate">
+                          <Tv className="w-4 h-4 text-amber-400 shrink-0" />
                           Episodes & Seasons
                         </h2>
-                        <p className="text-xs text-white/50">
+                        <p className="text-xs text-white/50 truncate">
                           Select an episode to start instant playback
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2.5 flex-wrap">
+                      <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto min-w-0">
                         {/* View Mode Toggle */}
-                        <div className="flex items-center bg-black/60 p-1 rounded-xl border border-white/10">
+                        <div className="flex items-center bg-black/60 p-1 rounded-xl border border-white/10 shrink-0">
                           <button
                             onClick={() => setEpisodeViewMode('grid')}
                             className={`p-1.5 rounded-lg transition-all ${
@@ -636,14 +636,14 @@ const TVDetailPage = () => {
 
                         {/* Season Pills */}
                         {seasonList.length > 0 && (
-                          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide max-w-full">
+                          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide w-full sm:max-w-xs min-w-0 touch-pan-x">
                             {seasonList.map(season => {
                               const active = selectedSeason === season.season_number;
                               return (
                                 <button
                                   key={season.id}
                                   onClick={() => setSelectedSeason(season.season_number)}
-                                  className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                                  className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap touch-feedback ${
                                     active
                                       ? 'bg-amber-400 text-black shadow-md shadow-amber-400/30'
                                       : 'bg-white/[0.05] hover:bg-white/[0.1] text-white/70 hover:text-white border border-white/10'
@@ -660,7 +660,7 @@ const TVDetailPage = () => {
 
                     {/* Fast Jump Episode Bar */}
                     {episodes.length > 0 && (
-                      <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-hide border-y border-white/10">
+                      <div className="flex items-center gap-1.5 overflow-x-auto py-1.5 scrollbar-hide border-y border-white/10 w-full max-w-full min-w-0 touch-pan-x">
                         <span className="text-[10px] uppercase font-extrabold text-amber-400/90 mr-1 shrink-0">
                           Fast Jump:
                         </span>
@@ -668,9 +668,9 @@ const TVDetailPage = () => {
                           <button
                             key={ep.id}
                             onClick={() => playEpisode(ep.episode_number)}
-                            className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all touch-feedback ${
+                            className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all touch-feedback whitespace-nowrap ${
                               selectedEpisode === ep.episode_number
-                                ? 'bg-amber-400 text-black border-amber-400'
+                                ? 'bg-amber-400 text-black border-amber-400 shadow-sm'
                                 : 'bg-white/[0.06] hover:bg-amber-400/20 hover:border-amber-400/40 text-white/80 border-white/10'
                             }`}
                           >
@@ -683,7 +683,7 @@ const TVDetailPage = () => {
 
                   {/* Episodes Display */}
                   {loadingEpisodes ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3.5 w-full max-w-full min-w-0">
                       {Array.from({ length: 6 }).map((_, i) => (
                         <div key={i} className="aspect-video rounded-xl bg-white/5 animate-pulse" />
                       ))}
@@ -694,12 +694,12 @@ const TVDetailPage = () => {
                     </div>
                   ) : episodeViewMode === 'grid' ? (
                     /* ── 2-Column Mobile Grid View ── */
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2.5 sm:gap-3.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2.5 sm:gap-3.5 w-full max-w-full min-w-0">
                       {episodes.map(ep => (
                         <div
                           key={ep.id}
                           onClick={() => playEpisode(ep.episode_number)}
-                          className="group flex flex-col rounded-xl sm:rounded-2xl overflow-hidden bg-[#0e1118] border border-white/10 hover:border-amber-400/40 transition-all duration-300 shadow-lg cursor-pointer hover:-translate-y-1 touch-feedback"
+                          className="group flex flex-col rounded-xl sm:rounded-2xl overflow-hidden bg-[#0e1118] border border-white/10 hover:border-amber-400/40 transition-all duration-300 shadow-lg cursor-pointer hover:-translate-y-1 touch-feedback min-w-0"
                         >
                           {/* Episode Thumbnail */}
                           <div className="relative aspect-video w-full overflow-hidden bg-neutral-900">
@@ -744,12 +744,12 @@ const TVDetailPage = () => {
                     </div>
                   ) : (
                     /* ── Compact List View ── */
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 w-full max-w-full min-w-0">
                       {episodes.map(ep => (
                         <div
                           key={ep.id}
                           onClick={() => playEpisode(ep.episode_number)}
-                          className="group flex items-center gap-3 p-2 rounded-xl bg-[#0e1118] border border-white/10 hover:border-amber-400/40 transition-all cursor-pointer touch-feedback"
+                          className="group flex items-center gap-3 p-2 rounded-xl bg-[#0e1118] border border-white/10 hover:border-amber-400/40 transition-all cursor-pointer touch-feedback min-w-0"
                         >
                           <div className="relative w-24 sm:w-32 aspect-video rounded-lg overflow-hidden bg-neutral-900 flex-shrink-0">
                             <img
@@ -788,14 +788,14 @@ const TVDetailPage = () => {
 
             {/* Cast Members Showcase */}
             {cast.length > 0 && (
-              <div className="mt-16 pt-8 border-t border-white/10">
+              <div className="mt-14 sm:mt-16 pt-8 border-t border-white/10 w-full max-w-full min-w-0">
                 <h3 className="font-display font-bold text-xl text-white mb-4">
                   Series Cast
                 </h3>
-                <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
+                <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 w-full max-w-full min-w-0 touch-pan-x">
                   {cast.map(member => (
-                    <div key={member.id} className="flex-none w-24 text-center group">
-                      <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border-2 border-white/10 group-hover:border-amber-400 transition-colors bg-neutral-900 shadow-lg">
+                    <div key={member.id} className="flex-none w-20 sm:w-24 text-center group">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full overflow-hidden border-2 border-white/10 group-hover:border-amber-400 transition-colors bg-neutral-900 shadow-lg">
                         <img
                           src={member.profile_path ? `https://image.tmdb.org/t/p/w200${member.profile_path}` : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
                           alt={member.name}
@@ -811,16 +811,17 @@ const TVDetailPage = () => {
                     </div>
                   ))}
                 </div>
-                {/* Recommended TV Shows Section */}
-                <div className="mt-16 pt-8 border-t border-white/10">
-                  <RecommendedShelf
-                    mediaId={show.id}
-                    mediaType="tv"
-                    currentTitle={show.name}
-                  />
-                </div>
               </div>
             )}
+
+            {/* Recommended TV Shows Section */}
+            <div className="mt-12 sm:mt-16 pt-8 border-t border-white/10 w-full max-w-full min-w-0">
+              <RecommendedShelf
+                mediaId={show.id}
+                mediaType="tv"
+                currentTitle={show.name}
+              />
+            </div>
           </div>
         </div>
       )}

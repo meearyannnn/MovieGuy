@@ -289,7 +289,7 @@ const MovieDetailPage = () => {
                 </div>
 
                 {/* Action Buttons Toolbar */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 mb-8">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 mb-8 w-full max-w-full min-w-0">
                   {/* Primary CTA: Watch Movie (Full-width, centered, thumb-friendly on mobile) */}
                   <button
                     onClick={() => setShowPlayer(true)}
@@ -300,7 +300,7 @@ const MovieDetailPage = () => {
                   </button>
 
                   {/* Secondary Actions Row */}
-                  <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto min-w-0">
                     {trailer && (
                       <button
                         onClick={() => setShowTrailer(true)}
@@ -336,28 +336,28 @@ const MovieDetailPage = () => {
                 </div>
 
                 {/* Overview */}
-                <div className="mb-6">
+                <div className="mb-6 w-full max-w-full min-w-0">
                   <h3 className="font-display font-bold text-lg text-white mb-2 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-amber-400" />
                     Storyline
                   </h3>
-                  <p className="text-white/70 text-sm sm:text-base leading-relaxed max-w-2xl font-light">
+                  <p className="text-white/70 text-sm sm:text-base leading-relaxed max-w-2xl font-light break-words">
                     {movie.overview || 'No overview available for this title.'}
                   </p>
                 </div>
 
                 {/* ── MovieGuy Meter (Mobile Only - Placed after Storyline so info comes first) ── */}
-                <div className="block md:hidden my-6">
+                <div className="block md:hidden my-6 w-full max-w-full min-w-0">
                   <CineVibeMeter movie={movie} runtime={movie.runtime} />
                 </div>
 
                 {/* Cast Members Showcase */}
                 {cast.length > 0 && (
-                  <div className="mt-8">
+                  <div className="mt-8 w-full max-w-full min-w-0">
                     <h3 className="font-display font-bold text-lg text-white mb-4">
                       Top Cast
                     </h3>
-                    <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
+                    <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 w-full max-w-full min-w-0 touch-pan-x">
                       {cast.map(member => (
                         <div key={member.id} className="flex-none w-24 text-center group">
                           <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border-2 border-white/10 group-hover:border-amber-400 transition-colors bg-neutral-900 shadow-lg">

@@ -112,22 +112,22 @@ export const RecommendedShelf = ({
   if (!loading && items.length === 0) return null;
 
   return (
-    <div className="w-full my-8">
+    <div className="w-full max-w-full min-w-0 my-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 px-1">
-        <div>
-          <h3 className="font-display font-bold text-xl md:text-2xl text-white tracking-tight flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-400" />
+      <div className="flex items-center justify-between mb-4 px-1 min-w-0">
+        <div className="min-w-0">
+          <h3 className="font-display font-bold text-xl md:text-2xl text-white tracking-tight flex items-center gap-2 truncate">
+            <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
             More Like This
           </h3>
-          <p className="text-xs text-white/50 mt-1">
+          <p className="text-xs text-white/50 mt-1 truncate">
             {currentTitle ? `Hand-picked titles recommended based on ${currentTitle}` : 'Top-rated titles recommended for you'}
           </p>
         </div>
       </div>
 
       {/* Row container with arrows */}
-      <div className="relative group/row">
+      <div className="relative group/row w-full max-w-full min-w-0">
         {showLeftArrow && (
           <button
             onClick={() => scroll('left')}
@@ -151,7 +151,7 @@ export const RecommendedShelf = ({
         <div
           ref={scrollRef}
           onScroll={checkScroll}
-          className="flex gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth touch-pan-x pb-4 pt-1 px-1"
+          className="flex gap-4 md:gap-5 overflow-x-auto scrollbar-hide scroll-smooth touch-pan-x pb-4 pt-1 px-1 w-full max-w-full min-w-0"
         >
           {loading
             ? Array.from({ length: 6 }).map((_, i) => (

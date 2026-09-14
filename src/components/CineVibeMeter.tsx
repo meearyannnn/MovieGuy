@@ -13,10 +13,10 @@ interface CineVibeMeterProps {
 
 function GenreBar({ name, percent, color, index }: { name: string; percent: number; color: string; index: number }) {
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-white/80">{name}</span>
-        <span className="text-[11px] font-mono font-bold text-white/50">{percent}%</span>
+    <div className="space-y-1.5 min-w-0">
+      <div className="flex items-center justify-between gap-2 min-w-0">
+        <span className="text-xs font-semibold text-white/80 truncate">{name}</span>
+        <span className="text-[11px] font-mono font-bold text-white/50 shrink-0">{percent}%</span>
       </div>
       <div
         className="h-1 w-full rounded-full bg-white/[0.08] overflow-hidden"
@@ -53,16 +53,16 @@ export const CineVibeMeter = ({ movie, runtime }: CineVibeMeterProps) => {
   }, [meterData]);
 
   return (
-    <div className="w-full rounded-2xl bg-white/[0.04] border border-white/10 overflow-hidden">
+    <div className="w-full max-w-full min-w-0 rounded-2xl bg-white/[0.04] border border-white/10 overflow-hidden">
 
       {/* ── Name + Verdict row ── */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-        <span className="text-[11px] font-bold uppercase tracking-widest text-white/50">
+      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-white/10 min-w-0">
+        <span className="text-[11px] font-bold uppercase tracking-widest text-white/50 truncate shrink-0">
           MovieGuy Meter
         </span>
         {verdict && (
           <span
-            className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full border"
+            className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full border shrink-0"
             style={{
               color: verdict.color,
               borderColor: `${verdict.color}40`,
