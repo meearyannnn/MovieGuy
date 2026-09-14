@@ -206,87 +206,77 @@ export interface IntelligentScoreResult {
 }
 
 export const calculateIntelligentScore = (movie: Movie, runtime?: number): IntelligentScoreResult => {
-  const voteAvg = movie.vote_average || 6.5;
-  const voteCount = movie.vote_count || 150;
+  const voteAvg = movie.vote_average != null && !isNaN(movie.vote_average) ? movie.vote_average : 6.0;
+  const voteCount = movie.vote_count != null && !isNaN(movie.vote_count) ? movie.vote_count : 100;
   const overview = (movie.overview || '').toLowerCase();
   const genres = movie.genre_ids || (movie as any).genres?.map((g: any) => g.id) || [];
 
-  // 1. Bayesian Weighted Rating Formula: WR = (v / (v + m)) * R + (m / (v + m)) * C
-  // v = vote_count, R = vote_average, m = 250 confidence threshold, C = 6.4 baseline average
-  const m = 250;
-  const C = 6.4;
-  const weightedRating = (voteCount / (voteCount + m)) * voteAvg + (m / (voteCount + m)) * C;
+  // 1. Dynamic Confidence Weighting:
+  // Trust the movie's actual vote_average directly.
+  // Only lightly smooth toward a neutral 6.0 when sample size is very tiny (< 25 votes).
+  let rating = voteAvg;
+  if (voteCount < 25 && voteCount > 0) {
+    rating = (voteCount / (voteCount + 15)) * voteAvg + (15 / (voteCount + 15)) * 6.0;
+  }
 
-  // 2. Non-linear mapping from Weighted Rating (range 1.0 - 9.0) to 0-100 Cinematic Scale
+  // 2. Map 0-10 rating to 0-100 Cinematic Scale:
+  // - 8.3 to 10.0 -> 85 to 98 (Perfection)
+  // - 7.1 to 8.2  -> 70 to 84 (Go for it)
+  // - 5.5 to 7.0  -> 50 to 69 (Timepass)
+  // - Below 5.5   -> 10 to 49 (Skip)
   let overall = 50;
-  if (weightedRating >= 8.3) {
-    // 8.3 - 9.0 -> 90 - 99 (Masterpiece / All-Time Great)
-    overall = 90 + (weightedRating - 8.3) * 12.8;
-  } else if (weightedRating >= 8.0) {
-    // 8.0 - 8.3 -> 84 - 89 (Critically Acclaimed)
-    overall = 84 + (weightedRating - 8.0) * 16.6;
-  } else if (weightedRating >= 7.2) {
-    // 7.2 - 8.0 -> 74 - 83 (Solid / Great Watch)
-    overall = 74 + (weightedRating - 7.2) * 11.25;
-  } else if (weightedRating >= 6.2) {
-    // 6.2 - 7.2 -> 62 - 73 (Good / Decent Popcorn Watch)
-    overall = 62 + (weightedRating - 6.2) * 11.0;
-  } else if (weightedRating >= 5.0) {
-    // 5.0 - 6.2 -> 45 - 61 (Mediocre / Flawed)
-    overall = 45 + (weightedRating - 5.0) * 13.3;
-  } else if (weightedRating >= 3.5) {
-    // 3.5 - 5.0 -> 25 - 44 (Poor / Disappointing)
-    overall = 25 + (weightedRating - 3.5) * 12.6;
+  if (rating >= 8.3) {
+    overall = Math.round(85 + (rating - 8.3) * 7.6);
+  } else if (rating >= 7.1) {
+    overall = Math.round(70 + (rating - 7.1) * 11.6);
+  } else if (rating >= 5.5) {
+    overall = Math.round(50 + (rating - 5.5) * 11.8);
   } else {
-    // < 3.5 -> 5 - 24 (Atrocious / Avoid)
-    overall = Math.max(5, weightedRating * 7.1);
+    overall = Math.round(Math.max(10, rating * 9.0));
   }
 
-  // Genre & Narrative Craft Nuance Adjustments (+/- 3 pts max)
-  if (genres.includes(878) || genres.includes(9648) || genres.includes(18)) {
-    if (/masterpiece|acclaimed|groundbreaking|iconic|unforgettable|twists|psychological/.test(overview)) {
-      overall += 2;
-    }
+  // Narrative craft & critical nuance adjustments (+/- 2 pts)
+  if (rating >= 7.0 && /masterpiece|acclaimed|groundbreaking|iconic|unforgettable|palme d'or|oscar/.test(overview)) {
+    overall = Math.min(99, overall + 2);
   }
-  const effectiveRuntime = runtime || (movie as any).runtime || 110;
-  if (effectiveRuntime >= 95 && effectiveRuntime <= 155 && overall >= 75) {
-    overall += 1;
+  if (rating <= 5.5 && /worst|disaster|flop|terrible|boring/.test(overview)) {
+    overall = Math.max(8, overall - 2);
   }
 
-  overall = Math.min(99, Math.max(8, Math.round(overall)));
+  overall = Math.min(99, Math.max(8, overall));
 
-  // Accurate Cinematic Grades & Verdicts
+  // Realistic Cinematic Grades & Verdicts
   let grade = 'B';
-  let verdict = 'Enjoyable Cinema Watch';
+  let verdict = 'Timepass • Casual Watch';
 
-  if (overall >= 90) {
+  if (overall >= 85) {
     grade = 'A+';
-    verdict = 'Cinema Masterpiece • Rare Narrative Excellence';
-  } else if (overall >= 82) {
+    verdict = 'Cinema Masterpiece • Perfection';
+  } else if (overall >= 78) {
     grade = 'A';
-    verdict = 'Exceptional Craft • Highly Recommended';
-  } else if (overall >= 74) {
+    verdict = 'Exceptional Craft • Go for it';
+  } else if (overall >= 70) {
     grade = 'B+';
-    verdict = 'Solid & Engaging • Strong Audience Choice';
-  } else if (overall >= 64) {
+    verdict = 'Solid & Engaging • Go for it';
+  } else if (overall >= 60) {
     grade = 'B';
-    verdict = 'Enjoyable Popcorn Watch • Broad Appeal';
-  } else if (overall >= 52) {
+    verdict = 'Enjoyable Watch • Timepass';
+  } else if (overall >= 50) {
     grade = 'C+';
-    verdict = 'Mixed Reviews • Niche Audience Appeal';
+    verdict = 'Average Popcorn • Timepass';
   } else if (overall >= 38) {
     grade = 'C';
-    verdict = 'Weak Execution • Flawed Cinema';
+    verdict = 'Weak Execution • Skip';
   } else {
     grade = 'F';
-    verdict = 'Critical Failure • Not Recommended';
+    verdict = 'Critical Failure • Hard Skip';
   }
 
   // Dynamic Sub-Breakdown Ratings
-  const storyCraft = Math.min(99, Math.max(15, Math.round(weightedRating * 10.2 + (genres.includes(18) || genres.includes(9648) ? 3 : 0))));
-  const immersion = Math.min(99, Math.max(15, Math.round(overall * 0.92 + (genres.includes(878) || genres.includes(28) || genres.includes(27) ? 7 : 2))));
-  const resonance = Math.min(99, Math.max(15, Math.round(weightedRating * 10.5)));
-  const rewatchability = Math.min(99, Math.max(15, Math.round(overall * 0.86 + (genres.includes(35) || genres.includes(28) ? 9 : 2))));
+  const storyCraft = Math.min(99, Math.max(10, Math.round(overall * 0.96 + (genres.includes(18) || genres.includes(9648) ? 3 : 0))));
+  const immersion = Math.min(99, Math.max(10, Math.round(overall * 0.94 + (genres.includes(878) || genres.includes(28) ? 4 : 0))));
+  const resonance = Math.min(99, Math.max(10, Math.round(overall * 0.95)));
+  const rewatchability = Math.min(99, Math.max(10, Math.round(overall * 0.88 + (genres.includes(35) || genres.includes(28) ? 6 : 0))));
 
   return {
     overallScore: overall,
@@ -381,26 +371,34 @@ export const calculateMeterData = (overallScore: number): MeterTierItem[] => {
   let timepass = 0;
   let skip = 0;
 
-  if (overallScore >= 80) {
-    perfection = Math.round(overallScore * 0.72);
-    goForIt = Math.round(overallScore * 0.22);
-    timepass = Math.max(1, Math.round((100 - overallScore) * 0.6));
+  if (overallScore >= 85) {
+    // ── Tier 1: Perfection (Score 85+) ──
+    // Rare all-time masterpieces (e.g. The Godfather, Interstellar, Shawshank, Spirited Away)
+    perfection = Math.min(80, 58 + Math.round((overallScore - 85) * 1.5));
+    goForIt = Math.round((100 - perfection) * 0.65);
+    timepass = Math.max(2, Math.round((100 - perfection - goForIt) * 0.7));
     skip = Math.max(0, 100 - (perfection + goForIt + timepass));
-  } else if (overallScore >= 60) {
-    perfection = Math.round(overallScore * 0.95);
-    goForIt = Math.round((100 - perfection) * 0.92);
-    timepass = Math.max(1, Math.round((100 - (perfection + goForIt)) * 0.7));
-    skip = Math.max(0, 100 - (perfection + goForIt + timepass));
-  } else if (overallScore >= 40) {
-    perfection = Math.max(1, Math.round(overallScore * 0.2));
-    goForIt = Math.round(overallScore * 0.45);
-    timepass = Math.round((100 - overallScore) * 0.55);
-    skip = Math.max(0, 100 - (perfection + goForIt + timepass));
+  } else if (overallScore >= 70) {
+    // ── Tier 2: Go for it (Score 70 - 84) ──
+    // Solid, acclaimed, highly recommended watches (e.g. Dune, Iron Man, Knives Out)
+    goForIt = Math.min(72, 54 + Math.round((overallScore - 70) * 1.1));
+    perfection = Math.round((overallScore - 68) * 1.0);
+    timepass = Math.max(3, Math.round((100 - goForIt - perfection) * 0.75));
+    skip = Math.max(0, 100 - (goForIt + perfection + timepass));
+  } else if (overallScore >= 50) {
+    // ── Tier 3: Timepass (Score 50 - 69) ──
+    // Casual popcorn films, average/mixed ratings (e.g. Fast X, Red Notice, Jurassic World)
+    timepass = Math.min(68, 52 + Math.round((69 - overallScore) * 0.6));
+    goForIt = Math.max(6, Math.round((overallScore - 48) * 0.9));
+    skip = Math.max(8, Math.round((100 - timepass - goForIt) * 0.85));
+    perfection = Math.max(0, 100 - (timepass + goForIt + skip));
   } else {
+    // ── Tier 4: Skip (Score < 50) ──
+    // Low-rated films, critical flops, poor execution (e.g. Madame Web, Morbius, Catwoman)
+    skip = Math.min(85, 56 + Math.round((50 - overallScore) * 0.8));
+    timepass = Math.round((100 - skip) * 0.7);
+    goForIt = Math.max(1, 100 - (skip + timepass));
     perfection = 0;
-    goForIt = Math.max(1, Math.round(overallScore * 0.25));
-    timepass = Math.round(overallScore * 0.35);
-    skip = Math.max(0, 100 - (perfection + goForIt + timepass));
   }
 
   return [
