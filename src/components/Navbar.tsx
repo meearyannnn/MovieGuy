@@ -101,6 +101,7 @@ export const Navbar = () => {
     { path: '/tv', label: 'TV Shows' },
     { path: '/genres', label: 'Genres' },
     { path: '/recommendations', label: 'AI Vibes' },
+    { path: '/time-machine', label: 'Time Machine' },
   ], []);
 
   return (
@@ -130,7 +131,7 @@ export const Navbar = () => {
           </Link>
 
           {/* ── Desktop Navigation Links ── */}
-          <nav className="hidden md:flex items-center gap-1 bg-white/[0.04] p-1 rounded-full border border-white/[0.08] backdrop-blur-xl">
+          <nav className="hidden md:flex items-center gap-0.5 lg:gap-1 bg-white/[0.04] p-1 rounded-full border border-white/[0.08] backdrop-blur-xl">
             {navItems.map(({ path, label }) => {
               const active = isActive(path);
               return (
@@ -138,7 +139,7 @@ export const Navbar = () => {
                   key={path}
                   to={path}
                   onClick={() => soundEffects.playHoverTick()}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all ${
+                  className={`px-3 lg:px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all whitespace-nowrap ${
                     active
                       ? 'bg-amber-400 text-black font-bold shadow-sm'
                       : 'text-white/60 hover:text-white hover:bg-white/[0.06]'
@@ -236,9 +237,13 @@ export const Navbar = () => {
                     soundEffects.playHoverTick();
                     setIsOpen(false);
                   }}
-                  className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/80 transition-all"
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs transition-all ${
+                    isActive('/time-machine')
+                      ? 'bg-amber-400 text-black font-bold border-amber-400 shadow-sm'
+                      : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/5 text-white/80'
+                  }`}
                 >
-                  <Hourglass className="w-4 h-4 text-amber-400" />
+                  <Hourglass className={`w-4 h-4 ${isActive('/time-machine') ? 'text-black' : 'text-amber-400'}`} />
                   <span>Time Machine</span>
                 </Link>
 

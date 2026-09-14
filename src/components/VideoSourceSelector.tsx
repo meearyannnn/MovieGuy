@@ -8,7 +8,7 @@ interface VideoSourceSelectorProps {
 
 export const VideoSourceSelector = ({ selectedSource, onSourceChange }: VideoSourceSelectorProps) => {
   return (
-    <div className="w-full max-w-4xl mx-auto my-6 p-5 sm:p-6 rounded-2xl bg-[#0e1118] border border-white/10 shadow-2xl backdrop-blur-xl">
+    <div className="w-full max-w-5xl mx-auto my-6 p-5 sm:p-6 rounded-2xl bg-[#0e1118] border border-white/10 shadow-2xl backdrop-blur-xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-white/10">
         <div className="flex items-center gap-2.5">
@@ -19,26 +19,26 @@ export const VideoSourceSelector = ({ selectedSource, onSourceChange }: VideoSou
             <h3 className="font-display font-bold text-base text-white flex items-center gap-2">
               Streaming Servers
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                Live
+                {videoSources.length} Live Servers
               </span>
             </h3>
             <p className="text-xs text-white/50">
-              Select your preferred streaming provider. If a video fails or buffers, choose another server.
+              Select a streaming server. If video fails to load or buffers, switch to another server below.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 text-xs text-white/50">
           <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-          <span>Ad-Free Ready</span>
+          <span>High-Speed Servers</span>
         </div>
       </div>
 
       {/* Server Chips Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         {videoSources.map((source, index) => {
           const isSelected = selectedSource.id === source.id;
-          const isTopTier = index < 3;
+          const isTopTier = index < 4;
 
           return (
             <button

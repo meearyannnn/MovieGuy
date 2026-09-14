@@ -102,46 +102,91 @@ const PLOT_MEMORIES: Array<{
 ];
 
 // Calculate intelligent vibe scores based on TMDB movie data
-export const calculateMovieVibe = (movie: Movie, runtime?: number): {
+export const calculateMovieVibe = (
+  movie: Movie,
+  runtime?: number
+): {
   pacing: 'Fast-Paced' | 'Balanced' | 'Slow-Burn Atmospheric';
   vibeScores: { tension: number; mindBend: number; emotion: number; humor: number };
 } => {
-  const genres = movie.genre_ids || [];
+  const genres = movie.genre_ids || (movie as any).genres?.map((g: any) => g.id) || [];
   const overview = (movie.overview || '').toLowerCase();
+  const title = (movie.title || (movie as any).name || '').toLowerCase();
+  const text = `${title} ${overview}`;
 
-  let tension = 4;
-  let mindBend = 3;
-  let emotion = 5;
-  let humor = 3;
+  // 1. Dynamic Tension (1 to 10)
+  let tension = 1;
+  if (genres.includes(27)) tension += 4.5; // Horror
+  if (genres.includes(53)) tension += 4.0; // Thriller
+  if (genres.includes(10752)) tension += 3.5; // War
+  if (genres.includes(28)) tension += 3.0; // Action
+  if (genres.includes(80)) tension += 2.5; // Crime
+  if (genres.includes(9648)) tension += 2.0; // Mystery
+  if (genres.includes(878)) tension += 1.5; // Sci-Fi
 
-  // Genre influence
-  if (genres.includes(28)) { tension += 3; } // Action
-  if (genres.includes(53)) { tension += 4; } // Thriller
-  if (genres.includes(27)) { tension += 4; } // Horror
-  if (genres.includes(878)) { mindBend += 4; tension += 1; } // Sci-Fi
-  if (genres.includes(9648)) { mindBend += 3; tension += 2; } // Mystery
-  if (genres.includes(18)) { emotion += 4; } // Drama
-  if (genres.includes(10749)) { emotion += 4; } // Romance
-  if (genres.includes(35)) { humor += 5; tension -= 1; } // Comedy
+  if (/kill|deadly|hunter|assassin|terror|danger|hostage|escape|survival|threat|countdown|bomb|monster|stalker|haunted|battle|war|fight|chase|blood|murder|trapped|nightmare|sinister|vengeance/.test(text)) {
+    tension += 2.5;
+  }
+  if (genres.includes(35) && !genres.includes(53) && !genres.includes(27) && !genres.includes(28)) {
+    tension = Math.max(1, tension - 2); // Suppress tension in pure comedy
+  }
 
-  // Keyword adjustments
-  if (overview.includes('twist') || overview.includes('mystery') || overview.includes('conspiracy')) mindBend += 2;
-  if (overview.includes('killer') || overview.includes('danger') || overview.includes('deadly')) tension += 2;
-  if (overview.includes('love') || overview.includes('tears') || overview.includes('family')) emotion += 2;
-  if (overview.includes('funny') || overview.includes('hilarious')) humor += 2;
+  // 2. Dynamic Mind-Bend (1 to 10)
+  let mindBend = 1;
+  if (genres.includes(878)) mindBend += 4.5; // Sci-Fi
+  if (genres.includes(9648)) mindBend += 4.0; // Mystery
+  if (genres.includes(53)) mindBend += 2.5; // Thriller
+  if (genres.includes(14)) mindBend += 2.0; // Fantasy
+  if (genres.includes(80)) mindBend += 1.5; // Crime
 
-  // Clamp 1-10
-  tension = Math.min(10, Math.max(1, tension));
-  mindBend = Math.min(10, Math.max(1, mindBend));
-  emotion = Math.min(10, Math.max(1, emotion));
-  humor = Math.min(10, Math.max(1, humor));
+  if (/twist|conspiracy|paradox|dimension|simulation|memory|subconscious|timeline|reality|identity|illusion|quantum|temporal|code|matrix|puzzle|secret|hallucination|parallel|existential|dream/.test(text)) {
+    mindBend += 3.0;
+  }
+  if (genres.includes(10749) && !genres.includes(878) && !genres.includes(9648) && !genres.includes(53)) {
+    mindBend = Math.max(1, mindBend - 1.5); // Suppress mind-bend in pure romance
+  }
 
+  // 3. Dynamic Emotion (1 to 10)
+  let emotion = 1;
+  if (genres.includes(10749)) emotion += 4.5; // Romance
+  if (genres.includes(18)) emotion += 4.0; // Drama
+  if (genres.includes(10751)) emotion += 3.0; // Family
+  if (genres.includes(16)) emotion += 2.5; // Animation
+  if (genres.includes(36)) emotion += 2.0; // History
+
+  if (/love|heart|tragedy|loss|grief|family|son|daughter|tear|sacrifice|bond|devoted|romance|marriage|friendship|healing|terminal|illness|inspire|reunion|courage|father|mother/.test(text)) {
+    emotion += 2.5;
+  }
+
+  // 4. Dynamic Humor (1 to 10)
+  let humor = 1;
+  if (genres.includes(35)) humor += 5.5; // Comedy
+  if (genres.includes(16)) humor += 2.5; // Animation
+  if (genres.includes(10751)) humor += 2.0; // Family
+  if (genres.includes(28) && genres.includes(35)) humor += 1.5; // Action Comedy
+
+  if (/funny|hilarious|comedy|satire|fun|laugh|whimsical|mischief|goofy|parody|wacky|absurd|buddy|misadventure|joke/.test(text)) {
+    humor += 2.5;
+  }
+  if ((genres.includes(27) || genres.includes(18)) && !genres.includes(35)) {
+    humor = Math.max(1, humor - 1.5); // Suppress humor in dark drama / horror
+  }
+
+  // Final Clamp 1-10
+  tension = Math.min(10, Math.max(1, Math.round(tension)));
+  mindBend = Math.min(10, Math.max(1, Math.round(mindBend)));
+  emotion = Math.min(10, Math.max(1, Math.round(emotion)));
+  humor = Math.min(10, Math.max(1, Math.round(humor)));
+
+  // Dynamic Pacing Logic
   let pacing: 'Fast-Paced' | 'Balanced' | 'Slow-Burn Atmospheric' = 'Balanced';
-  if (genres.includes(28) || (tension >= 8 && (runtime ? runtime <= 115 : true))) {
+  const effectiveRuntime = runtime || (movie as any).runtime || 110;
+
+  if ((genres.includes(28) || tension >= 7) && effectiveRuntime <= 115) {
     pacing = 'Fast-Paced';
-  } else if (runtime && runtime >= 145) {
-    pacing = 'Slow-Burn Atmospheric';
-  } else if (genres.includes(18) && genres.includes(9648)) {
+  } else if (humor >= 8 && effectiveRuntime <= 100) {
+    pacing = 'Fast-Paced';
+  } else if (effectiveRuntime >= 130 || (genres.includes(18) && mindBend >= 7) || (genres.includes(27) && effectiveRuntime >= 115)) {
     pacing = 'Slow-Burn Atmospheric';
   }
 
@@ -162,56 +207,86 @@ export interface IntelligentScoreResult {
 
 export const calculateIntelligentScore = (movie: Movie, runtime?: number): IntelligentScoreResult => {
   const voteAvg = movie.vote_average || 6.5;
-  const voteCount = movie.vote_count || 100;
+  const voteCount = movie.vote_count || 150;
   const overview = (movie.overview || '').toLowerCase();
-  const genres = movie.genre_ids || [];
+  const genres = movie.genre_ids || (movie as any).genres?.map((g: any) => g.id) || [];
 
-  const baseConfidence = Math.min(1, voteCount / 1500);
-  const baseRatingScore = (voteAvg / 10) * 85 + (baseConfidence * 15);
+  // 1. Bayesian Weighted Rating Formula: WR = (v / (v + m)) * R + (m / (v + m)) * C
+  // v = vote_count, R = vote_average, m = 250 confidence threshold, C = 6.4 baseline average
+  const m = 250;
+  const C = 6.4;
+  const weightedRating = (voteCount / (voteCount + m)) * voteAvg + (m / (voteCount + m)) * C;
 
-  let depthBonus = 0;
-  if (genres.includes(878)) depthBonus += 4;
-  if (genres.includes(9648)) depthBonus += 4;
-  if (genres.includes(18)) depthBonus += 3;
-  if (genres.includes(80)) depthBonus += 2;
-
-  if (overview.includes('twist') || overview.includes('philosophical') || overview.includes('psychological') || overview.includes('conspiracy')) {
-    depthBonus += 4;
+  // 2. Non-linear mapping from Weighted Rating (range 1.0 - 9.0) to 0-100 Cinematic Scale
+  let overall = 50;
+  if (weightedRating >= 8.3) {
+    // 8.3 - 9.0 -> 90 - 99 (Masterpiece / All-Time Great)
+    overall = 90 + (weightedRating - 8.3) * 12.8;
+  } else if (weightedRating >= 8.0) {
+    // 8.0 - 8.3 -> 84 - 89 (Critically Acclaimed)
+    overall = 84 + (weightedRating - 8.0) * 16.6;
+  } else if (weightedRating >= 7.2) {
+    // 7.2 - 8.0 -> 74 - 83 (Solid / Great Watch)
+    overall = 74 + (weightedRating - 7.2) * 11.25;
+  } else if (weightedRating >= 6.2) {
+    // 6.2 - 7.2 -> 62 - 73 (Good / Decent Popcorn Watch)
+    overall = 62 + (weightedRating - 6.2) * 11.0;
+  } else if (weightedRating >= 5.0) {
+    // 5.0 - 6.2 -> 45 - 61 (Mediocre / Flawed)
+    overall = 45 + (weightedRating - 5.0) * 13.3;
+  } else if (weightedRating >= 3.5) {
+    // 3.5 - 5.0 -> 25 - 44 (Poor / Disappointing)
+    overall = 25 + (weightedRating - 3.5) * 12.6;
+  } else {
+    // < 3.5 -> 5 - 24 (Atrocious / Avoid)
+    overall = Math.max(5, weightedRating * 7.1);
   }
 
-  let pacingScore = 85;
-  if (runtime) {
-    if (runtime >= 100 && runtime <= 160) pacingScore = 94;
-    else if (runtime > 160) pacingScore = 88;
-    else pacingScore = 82;
+  // Genre & Narrative Craft Nuance Adjustments (+/- 3 pts max)
+  if (genres.includes(878) || genres.includes(9648) || genres.includes(18)) {
+    if (/masterpiece|acclaimed|groundbreaking|iconic|unforgettable|twists|psychological/.test(overview)) {
+      overall += 2;
+    }
+  }
+  const effectiveRuntime = runtime || (movie as any).runtime || 110;
+  if (effectiveRuntime >= 95 && effectiveRuntime <= 155 && overall >= 75) {
+    overall += 1;
   }
 
-  const overall = Math.min(99, Math.max(45, Math.round(baseRatingScore * 0.7 + depthBonus * 1.5 + (pacingScore * 0.15))));
+  overall = Math.min(99, Math.max(8, Math.round(overall)));
 
-  let grade = 'A';
-  let verdict = 'Critically Acclaimed Masterwork';
+  // Accurate Cinematic Grades & Verdicts
+  let grade = 'B';
+  let verdict = 'Enjoyable Cinema Watch';
 
-  if (overall >= 92) {
+  if (overall >= 90) {
     grade = 'A+';
-    verdict = 'Cinema Masterpiece • Rare Narrative Depth';
-  } else if (overall >= 85) {
+    verdict = 'Cinema Masterpiece • Rare Narrative Excellence';
+  } else if (overall >= 82) {
     grade = 'A';
     verdict = 'Exceptional Craft • Highly Recommended';
-  } else if (overall >= 78) {
+  } else if (overall >= 74) {
     grade = 'B+';
-    verdict = 'Solid & Engaging • High Resonance';
-  } else if (overall >= 70) {
+    verdict = 'Solid & Engaging • Strong Audience Choice';
+  } else if (overall >= 64) {
     grade = 'B';
-    verdict = 'Entertaining Popcorn Experience';
-  } else {
+    verdict = 'Enjoyable Popcorn Watch • Broad Appeal';
+  } else if (overall >= 52) {
+    grade = 'C+';
+    verdict = 'Mixed Reviews • Niche Audience Appeal';
+  } else if (overall >= 38) {
     grade = 'C';
-    verdict = 'Casual Watch • Niche Appeal';
+    verdict = 'Weak Execution • Flawed Cinema';
+  } else {
+    grade = 'F';
+    verdict = 'Critical Failure • Not Recommended';
   }
 
-  const storyCraft = Math.min(98, Math.max(50, Math.round(voteAvg * 9.5 + depthBonus * 2)));
-  const immersion = Math.min(99, Math.max(50, Math.round(pacingScore * 0.7 + (genres.includes(878) || genres.includes(28) ? 25 : 18))));
-  const resonance = Math.min(98, Math.max(50, Math.round(voteAvg * 10 + (baseConfidence * 10) - 5)));
-  const rewatchability = Math.min(97, Math.max(45, Math.round(overall * 0.85 + (genres.includes(35) || genres.includes(28) ? 12 : 5))));
+  // Dynamic Sub-Breakdown Ratings
+  const storyCraft = Math.min(99, Math.max(15, Math.round(weightedRating * 10.2 + (genres.includes(18) || genres.includes(9648) ? 3 : 0))));
+  const immersion = Math.min(99, Math.max(15, Math.round(overall * 0.92 + (genres.includes(878) || genres.includes(28) || genres.includes(27) ? 7 : 2))));
+  const resonance = Math.min(99, Math.max(15, Math.round(weightedRating * 10.5)));
+  const rewatchability = Math.min(99, Math.max(15, Math.round(overall * 0.86 + (genres.includes(35) || genres.includes(28) ? 9 : 2))));
 
   return {
     overallScore: overall,
@@ -224,6 +299,116 @@ export const calculateIntelligentScore = (movie: Movie, runtime?: number): Intel
       rewatchability,
     },
   };
+};
+
+export interface VibeChartItem {
+  name: string;
+  percent: number;
+  color: string;
+}
+
+export interface MeterTierItem {
+  label: 'Skip' | 'Timepass' | 'Go for it' | 'Perfection';
+  percent: number;
+  color: string;
+}
+
+const GENRE_COLOR_MAP: Record<string, string> = {
+  Drama: '#9a3412',       // Warm Rust/Brown (as seen in Vibe Chart)
+  Thriller: '#1d4ed8',    // Deep Blue
+  Action: '#dc2626',      // Crimson Red
+  'Sci-Fi': '#8b5cf6',     // Purple
+  Comedy: '#eab308',      // Yellow
+  Horror: '#991b1b',      // Dark Crimson
+  Romance: '#f43f5e',     // Rose
+  Mystery: '#6366f1',     // Indigo
+  Crime: '#ea580c',       // Orange
+  Adventure: '#f59e0b',   // Amber
+  Animation: '#06b6d4',   // Cyan
+  Fantasy: '#d946ef',     // Fuchsia
+};
+
+export const calculateVibeChartData = (movie: Movie): VibeChartItem[] => {
+  const genres = movie.genre_ids || (movie as any).genres?.map((g: any) => typeof g === 'object' ? g.name : g) || [];
+  const overview = (movie.overview || '').toLowerCase();
+
+  const genreIdToName: Record<number, string> = {
+    28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
+    99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
+    27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi',
+    10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western'
+  };
+
+  const detectedNames: string[] = [];
+  for (const g of genres) {
+    if (typeof g === 'number' && genreIdToName[g]) {
+      detectedNames.push(genreIdToName[g]);
+    } else if (typeof g === 'string') {
+      detectedNames.push(g);
+    }
+  }
+
+  if (detectedNames.length === 0) {
+    if (/kill|assassin|danger|threat|survival|chase/.test(overview)) detectedNames.push('Thriller', 'Action');
+    else if (/love|heart|romance|family/.test(overview)) detectedNames.push('Drama', 'Romance');
+    else if (/twist|dimension|simulation|mystery/.test(overview)) detectedNames.push('Sci-Fi', 'Mystery');
+    else detectedNames.push('Drama', 'Thriller');
+  }
+
+  const topNames = Array.from(new Set(detectedNames)).slice(0, 3);
+  if (topNames.length === 1) {
+    if (topNames[0] === 'Drama') topNames.push('Thriller', 'Action');
+    else if (topNames[0] === 'Action') topNames.push('Thriller', 'Adventure');
+    else if (topNames[0] === 'Comedy') topNames.push('Drama', 'Romance');
+    else if (topNames[0] === 'Sci-Fi') topNames.push('Mystery', 'Action');
+    else topNames.push('Drama', 'Thriller');
+  } else if (topNames.length === 2) {
+    topNames.push(topNames.includes('Action') ? 'Thriller' : 'Action');
+  }
+
+  const rawPercents = [50, 45, 5];
+
+  return topNames.map((name, idx) => ({
+    name,
+    percent: rawPercents[idx] || 10,
+    color: GENRE_COLOR_MAP[name] || '#3b82f6',
+  }));
+};
+
+export const calculateMeterData = (overallScore: number): MeterTierItem[] => {
+  let perfection = 0;
+  let goForIt = 0;
+  let timepass = 0;
+  let skip = 0;
+
+  if (overallScore >= 80) {
+    perfection = Math.round(overallScore * 0.72);
+    goForIt = Math.round(overallScore * 0.22);
+    timepass = Math.max(1, Math.round((100 - overallScore) * 0.6));
+    skip = Math.max(0, 100 - (perfection + goForIt + timepass));
+  } else if (overallScore >= 60) {
+    perfection = Math.round(overallScore * 0.95);
+    goForIt = Math.round((100 - perfection) * 0.92);
+    timepass = Math.max(1, Math.round((100 - (perfection + goForIt)) * 0.7));
+    skip = Math.max(0, 100 - (perfection + goForIt + timepass));
+  } else if (overallScore >= 40) {
+    perfection = Math.max(1, Math.round(overallScore * 0.2));
+    goForIt = Math.round(overallScore * 0.45);
+    timepass = Math.round((100 - overallScore) * 0.55);
+    skip = Math.max(0, 100 - (perfection + goForIt + timepass));
+  } else {
+    perfection = 0;
+    goForIt = Math.max(1, Math.round(overallScore * 0.25));
+    timepass = Math.round(overallScore * 0.35);
+    skip = Math.max(0, 100 - (perfection + goForIt + timepass));
+  }
+
+  return [
+    { label: 'Skip', percent: skip, color: '#f43f5e' },
+    { label: 'Timepass', percent: timepass, color: '#eab308' },
+    { label: 'Go for it', percent: goForIt, color: '#10b981' },
+    { label: 'Perfection', percent: perfection, color: '#a855f7' },
+  ];
 };
 
 export const queryCineAi = async (prompt: string): Promise<CineAiResponse> => {

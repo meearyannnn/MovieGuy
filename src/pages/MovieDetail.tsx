@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Calendar, Clock, Bookmark, Check, Play, ArrowLeft, Youtube, Share2, Sparkles, X, Zap, Brain, Heart, Smile, Compass } from 'lucide-react';
+import { Star, Calendar, Clock, Bookmark, Check, Play, ArrowLeft, Youtube, Share2, Sparkles, X } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { tmdb, type MovieDetail, type CastMember } from '@/services/tmdb';
 import { VideoSourceSelector } from '@/components/VideoSourceSelector';
+import { RecommendedShelf } from '@/components/RecommendedShelf';
+import { CineVibeMeter } from '@/components/CineVibeMeter';
 import { videoSources, type VideoSource } from '@/types/videoSources';
 import { useWatchlist } from '@/hooks/useWatchlist';
-import { calculateMovieVibe, calculateIntelligentScore } from '@/lib/cineAiEngine';
 import { toast } from 'sonner';
 
 interface VideoTrailer {
@@ -167,7 +168,7 @@ const MovieDetailPage = () => {
             </div>
           </div>
 
-          {/* Cinema Frame */}
+          {/* Elegant Cinema Frame */}
           <div
             className={`relative w-full aspect-video rounded-2xl overflow-hidden bg-black transition-all duration-500 z-40 ${
               lightsOff
@@ -190,6 +191,15 @@ const MovieDetailPage = () => {
               onSourceChange={setSelectedSource}
             />
           </div>
+
+          {/* Recommended Movies inside Theater View */}
+          <div className="relative z-40 mt-12 border-t border-white/10 pt-8">
+            <RecommendedShelf
+              mediaId={movie.id}
+              mediaType="movie"
+              currentTitle={movie.title}
+            />
+          </div>
         </div>
       ) : (
         /* ── Movie Details Showcase ── */
@@ -209,9 +219,9 @@ const MovieDetailPage = () => {
           {/* Details Content Container */}
           <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-44 sm:-mt-64 pb-36 md:pb-20 w-full max-w-full overflow-hidden sm:overflow-visible">
             <div className="flex flex-col md:flex-row gap-6 sm:gap-8 lg:gap-12 items-start w-full max-w-full">
-              {/* Poster Card */}
-              <div className="w-48 sm:w-64 md:w-72 flex-shrink-0 mx-auto md:mx-0">
-                <div className="relative aspect-[2/3] rounded-2xl overflow-hidden border-2 border-white/15 shadow-2xl shadow-black/90 group">
+              {/* Poster Card Column */}
+              <div className="w-full max-w-sm md:w-80 flex-shrink-0 mx-auto md:mx-0 space-y-4">
+                <div className="w-52 sm:w-64 md:w-full mx-auto relative aspect-[2/3] rounded-2xl overflow-hidden border-2 border-white/15 shadow-2xl shadow-black/90 group">
                   <img
                     src={tmdb.getImageUrl(movie.poster_path, 'w500')}
                     alt={movie.title}
@@ -226,6 +236,11 @@ const MovieDetailPage = () => {
                       Stream Now
                     </button>
                   </div>
+                </div>
+
+                {/* ── MovieGuy Meter (Under Poster - Desktop Only) ── */}
+                <div className="hidden md:block">
+                  <CineVibeMeter movie={movie} runtime={movie.runtime} />
                 </div>
               </div>
 
@@ -331,112 +346,10 @@ const MovieDetailPage = () => {
                   </p>
                 </div>
 
-                {/* ── AI Vibe Radar & Pacing Card ── */}
-                {(() => {
-                  const vibe = calculateMovieVibe(movie, movie.runtime);
-                  const intel = calculateIntelligentScore(movie, movie.runtime);
-                  return (
-                    <div className="mb-8 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl shadow-xl max-w-2xl overflow-hidden">
-                      {/* Smart Intelligent Score Banner */}
-                      <div className="flex items-center justify-between gap-3 pb-4 mb-4 border-b border-white/10">
-                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                          <div className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 rounded-2xl bg-amber-400/10 border border-amber-400/25 flex items-center justify-center">
-                            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <h3 className="font-display font-bold text-sm sm:text-base text-white truncate">
-                                Smart Intelligent Score
-                              </h3>
-                              <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-bold border border-amber-400/30 flex-shrink-0">
-                                GRADE {intel.grade}
-                              </span>
-                            </div>
-                            <p className="text-[11px] sm:text-xs text-white/50 font-light truncate mt-0.5">
-                              {intel.verdict}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 bg-black/50 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl border border-white/10 flex-shrink-0">
-                          <span className="text-xl sm:text-2xl font-display font-black bg-gradient-to-r from-amber-400 to-amber-200 bg-clip-text text-transparent">
-                            {intel.overallScore}
-                          </span>
-                          <span className="text-[10px] sm:text-xs text-white/40 font-mono">/100</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs font-mono uppercase tracking-wider text-white/50 flex items-center gap-1.5">
-                          <Compass className="w-3.5 h-3.5 text-purple-400" />
-                          Cinema Vibe Radar
-                        </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-semibold border border-purple-500/30">
-                          {vibe.pacing}
-                        </span>
-                      </div>
-
-                      {/* 4 Metric Bars */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-                        {/* Tension */}
-                        <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/40 border border-white/5 text-center min-w-0">
-                          <div className="flex items-center justify-center gap-1 text-[11px] text-amber-400 font-bold mb-1 truncate">
-                            <Zap className="w-3 h-3 flex-shrink-0" />
-                            <span>Tension</span>
-                          </div>
-                          <div className="font-display font-extrabold text-base sm:text-lg text-white">
-                            {vibe.vibeScores.tension}<span className="text-[10px] sm:text-xs text-white/40">/10</span>
-                          </div>
-                          <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
-                            <div className="h-full bg-amber-400 rounded-full" style={{ width: `${vibe.vibeScores.tension * 10}%` }} />
-                          </div>
-                        </div>
-
-                        {/* Mind-Bend */}
-                        <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/40 border border-white/5 text-center min-w-0">
-                          <div className="flex items-center justify-center gap-1 text-[11px] text-purple-400 font-bold mb-1 truncate">
-                            <Brain className="w-3 h-3 flex-shrink-0" />
-                            <span>Mind-Bend</span>
-                          </div>
-                          <div className="font-display font-extrabold text-base sm:text-lg text-white">
-                            {vibe.vibeScores.mindBend}<span className="text-[10px] sm:text-xs text-white/40">/10</span>
-                          </div>
-                          <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
-                            <div className="h-full bg-purple-400 rounded-full" style={{ width: `${vibe.vibeScores.mindBend * 10}%` }} />
-                          </div>
-                        </div>
-
-                        {/* Emotion */}
-                        <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/40 border border-white/5 text-center min-w-0">
-                          <div className="flex items-center justify-center gap-1 text-[11px] text-pink-400 font-bold mb-1 truncate">
-                            <Heart className="w-3 h-3 flex-shrink-0" />
-                            <span>Emotion</span>
-                          </div>
-                          <div className="font-display font-extrabold text-base sm:text-lg text-white">
-                            {vibe.vibeScores.emotion}<span className="text-[10px] sm:text-xs text-white/40">/10</span>
-                          </div>
-                          <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
-                            <div className="h-full bg-pink-400 rounded-full" style={{ width: `${vibe.vibeScores.emotion * 10}%` }} />
-                          </div>
-                        </div>
-
-                        {/* Humor */}
-                        <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/40 border border-white/5 text-center min-w-0">
-                          <div className="flex items-center justify-center gap-1 text-[11px] text-yellow-400 font-bold mb-1 truncate">
-                            <Smile className="w-3 h-3 flex-shrink-0" />
-                            <span>Humor</span>
-                          </div>
-                          <div className="font-display font-extrabold text-base sm:text-lg text-white">
-                            {vibe.vibeScores.humor}<span className="text-[10px] sm:text-xs text-white/40">/10</span>
-                          </div>
-                          <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
-                            <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${vibe.vibeScores.humor * 10}%` }} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
+                {/* ── MovieGuy Meter (Mobile Only - Placed after Storyline so info comes first) ── */}
+                <div className="block md:hidden my-6">
+                  <CineVibeMeter movie={movie} runtime={movie.runtime} />
+                </div>
 
                 {/* Cast Members Showcase */}
                 {cast.length > 0 && (
@@ -465,6 +378,15 @@ const MovieDetailPage = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Recommended Movies Section */}
+                <div className="mt-12 pt-8 border-t border-white/10">
+                  <RecommendedShelf
+                    mediaId={movie.id}
+                    mediaType="movie"
+                    currentTitle={movie.title}
+                  />
+                </div>
               </div>
             </div>
           </div>

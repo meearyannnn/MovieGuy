@@ -1,4 +1,5 @@
 import { tmdb, type Movie } from './tmdb';
+import { calculateMovieVibe } from '@/lib/cineAiEngine';
 
 export interface RecommendedMovie {
   id: string;
@@ -10,6 +11,9 @@ export interface RecommendedMovie {
   backdrop_url?: string;
   release_date?: string;
   match_reason?: string;
+  match_score?: number;
+  pacing?: 'Fast-Paced' | 'Balanced' | 'Slow-Burn Atmospheric';
+  vibeScores?: { tension: number; mindBend: number; emotion: number; humor: number };
 }
 
 interface MoodPresetConfig {
@@ -22,42 +26,42 @@ const PRESET_CONFIGS: Record<string, MoodPresetConfig> = {
   'Mind-Bending Sci-Fi': {
     genres: [878, 9648], // Sci-Fi + Mystery
     seeds: [27205, 157336, 1124, 329865], // Inception, Interstellar, The Prestige, Arrival
-    reason: '99% Match • Mind-Bending Sci-Fi',
+    reason: '99% Match • Mind-bending narrative logic with legendary plot twists.',
   },
   'Adrenaline Rush': {
     genres: [28, 53], // Action + Thriller
     seeds: [76341, 245891, 361743], // Mad Max, John Wick, Top Gun: Maverick
-    reason: '98% Match • High-Octane Action',
+    reason: '98% Match • High-octane setpieces and non-stop adrenaline.',
   },
   'Late Night Noir': {
     genres: [80, 9648], // Crime + Mystery
     seeds: [807, 414906, 11324, 77], // Se7en, The Batman, Shutter Island, Memento
-    reason: '97% Match • Gritty Dark Mystery',
+    reason: '97% Match • Gritty neo-noir mystery with dark atmospheric depth.',
   },
   'Pure Laughs': {
     genres: [35], // Comedy
     seeds: [8363, 120467, 18785], // Superbad, Grand Budapest Hotel, The Hangover
-    reason: '96% Match • Feel-Good Comedy',
+    reason: '96% Match • Feel-good comedic energy and hilarious character chemistry.',
   },
   'Heartfelt Romance': {
     genres: [10749, 18], // Romance + Drama
     seeds: [313369, 38, 122906], // La La Land, Eternal Sunshine, About Time
-    reason: '98% Match • Emotional Romance',
+    reason: '98% Match • Deeply emotional romance that will touch your soul.',
   },
   'Edge-of-Seat Thriller': {
     genres: [53, 9648], // Thriller + Mystery
     seeds: [496243, 210577, 146233], // Parasite, Gone Girl, Prisoners
-    reason: '99% Match • Intense Suspense',
+    reason: '99% Match • Unbearable suspense and unpredictable story beats.',
   },
   'Spooky Horror': {
     genres: [27, 53], // Horror + Thriller
     seeds: [694, 493922, 138843], // The Shining, Hereditary, The Conjuring
-    reason: '96% Match • Chilling Horror',
+    reason: '96% Match • Chilling dread and unforgettable horror craftsmanship.',
   },
   'Deeply Emotional': {
     genres: [18], // Drama
     seeds: [278, 489, 244786], // Shawshank, Good Will Hunting, Whiplash
-    reason: '98% Match • Masterpiece Drama',
+    reason: '98% Match • Cinema masterpiece with profound narrative impact.',
   },
 };
 
@@ -116,17 +120,61 @@ const GENRE_KEYWORD_MAP: Record<string, number> = {
   western: 37,
 };
 
-const formatMovie = (movie: Movie, matchReason = 'High Match'): RecommendedMovie => ({
-  id: movie.id.toString(),
-  title: movie.title || movie.name || 'Untitled',
-  description: movie.overview || '',
-  genre: movie.media_type === 'tv' ? 'TV Series' : 'Cinema Film',
-  rating: movie.vote_average || 0,
-  image_url: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '',
-  backdrop_url: movie.backdrop_path ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}` : undefined,
-  release_date: movie.release_date || movie.first_air_date,
-  match_reason: matchReason,
-});
+const generateHumanReason = (query: string, movie: Movie): string => {
+  const q = query.toLowerCase();
+  const title = movie.title || movie.name || '';
+
+  if (q.includes('mix of') || q.includes('couple') || q.includes('partner')) {
+    if (q.includes('romance') && q.includes('action')) {
+      return `99% Match • Perfect Couple Compromise: High-octane action meets genuine romantic chemistry.`;
+    }
+    if (q.includes('comedy') && q.includes('thriller')) {
+      return `98% Match • Perfect Couple Compromise: Edge-of-seat suspense paired with laugh-out-loud humor.`;
+    }
+    if (q.includes('sci-fi') || q.includes('fantasy')) {
+      return `98% Match • Ideal Pair Watch: High-concept imagination balanced with rich character drama.`;
+    }
+    return `98% Match • Curated Crowd-Pleaser Compromise for your movie night.`;
+  }
+
+  if (q.includes('twist') || q.includes('mind') || q.includes('psychological')) {
+    return `99% Match • Mind-bending narrative logic with complex psychological depth.`;
+  }
+  if (q.includes('short') || q.includes('90') || q.includes('quick')) {
+    return `98% Match • High-impact narrative pacing with zero filler under 95 minutes.`;
+  }
+  if (q.includes('cozy') || q.includes('comfort') || q.includes('feel good') || q.includes('funny')) {
+    return `97% Match • Warm, feel-good cinema guaranteed to lift your mood.`;
+  }
+  if (q.includes('noir') || q.includes('dark') || q.includes('crime') || q.includes('mystery')) {
+    return `97% Match • Gritty atmospheric mystery with compelling investigative tension.`;
+  }
+  if (q.includes('scary') || q.includes('horror')) {
+    return `96% Match • Chilling atmosphere with intense horror setpieces.`;
+  }
+
+  return `96% Match • High semantic alignment with "${query}".`;
+};
+
+const formatMovie = (movie: Movie, matchReason?: string, customScore?: number): RecommendedMovie => {
+  const vibe = calculateMovieVibe(movie);
+  const score = customScore || Math.min(99, Math.max(90, Math.round((movie.vote_average || 7.0) * 10 + 15)));
+
+  return {
+    id: movie.id.toString(),
+    title: movie.title || movie.name || 'Untitled',
+    description: movie.overview || '',
+    genre: movie.media_type === 'tv' ? 'TV Series' : 'Cinema Film',
+    rating: movie.vote_average || 0,
+    image_url: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '',
+    backdrop_url: movie.backdrop_path ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}` : undefined,
+    release_date: movie.release_date || movie.first_air_date,
+    match_reason: matchReason || 'Cinephile Intelligence Choice',
+    match_score: score,
+    pacing: vibe.pacing,
+    vibeScores: vibe.vibeScores,
+  };
+};
 
 export const searchMoviesByMood = async (rawQuery: string): Promise<RecommendedMovie[]> => {
   const query = rawQuery.trim();
@@ -142,7 +190,6 @@ export const searchMoviesByMood = async (rawQuery: string): Promise<RecommendedM
     if (presetKey) {
       const config = PRESET_CONFIGS[presetKey];
 
-      // 1. Fetch seed recommendations
       for (const seedId of config.seeds.slice(0, 2)) {
         try {
           const recs = await tmdb.getRecommendations(seedId, 'movie');
@@ -154,7 +201,6 @@ export const searchMoviesByMood = async (rawQuery: string): Promise<RecommendedM
         }
       }
 
-      // 2. Fetch Top Rated & Popular for configured genres
       const genreStr = config.genres.join(',');
       const [topRated, popular] = await Promise.all([
         tmdb.discover('movie', `with_genres=${genreStr}&sort_by=vote_average.desc&vote_count.gte=400&page=1`),
@@ -170,7 +216,7 @@ export const searchMoviesByMood = async (rawQuery: string): Promise<RecommendedM
 
       return Array.from(resultsMap.values())
         .slice(0, 20)
-        .map(m => formatMovie(m, config.reason));
+        .map(m => formatMovie(m, config.reason, 98));
     }
 
     // ── Strategy 2: "Movies like [Title]" pattern ──
@@ -184,7 +230,7 @@ export const searchMoviesByMood = async (rawQuery: string): Promise<RecommendedM
         if (recs.results && recs.results.length > 0) {
           return recs.results
             .filter((m: Movie) => m.poster_path)
-            .map((m: Movie) => formatMovie(m, `Because you like ${topMatch.title}`));
+            .map((m: Movie) => formatMovie(m, `99% Match • Shares core atmospheric DNA with ${topMatch.title}`, 99));
         }
       }
     }
@@ -216,7 +262,7 @@ export const searchMoviesByMood = async (rawQuery: string): Promise<RecommendedM
       if (resultsMap.size > 0) {
         return Array.from(resultsMap.values())
           .slice(0, 20)
-          .map(m => formatMovie(m, '98% Vibe Match'));
+          .map(m => formatMovie(m, generateHumanReason(query, m), 97));
       }
     }
 
@@ -227,14 +273,14 @@ export const searchMoviesByMood = async (rawQuery: string): Promise<RecommendedM
     );
 
     if (validResults.length > 0) {
-      return validResults.map((m: Movie) => formatMovie(m, 'Direct Match'));
+      return validResults.map((m: Movie) => formatMovie(m, `100% Direct Match • Exact title query match`, 100));
     }
 
     // ── Fallback: Return trending masterpieces ──
     const trending = await tmdb.getTrending('movie', 'week');
     return (trending.results || [])
       .slice(0, 15)
-      .map((m: Movie) => formatMovie(m, 'Trending Spotlight'));
+      .map((m: Movie) => formatMovie(m, 'Trending Spotlight • High audience demand', 95));
   } catch (error) {
     console.error('Error fetching recommendations:', error);
     return [];

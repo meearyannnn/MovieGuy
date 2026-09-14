@@ -35,7 +35,7 @@ export const SearchPage = () => {
     try {
       // 1. Direct Title Search
       const searchData = await tmdb.search(searchQuery);
-      let list = searchData.results || [];
+      const list = searchData.results || [];
 
       // 2. If results are few or query is thematic/semantic, blend with smart discovery
       if (list.length < 5 || q.includes('under 90') || q.includes('sci-fi') || q.includes('thriller') || q.includes('mystery') || q.includes('action') || q.includes('90s')) {
@@ -93,7 +93,7 @@ export const SearchPage = () => {
 
   // Filter & Sort results with Smart Intelligent Score
   const processedResults = useMemo(() => {
-    let list = results.filter(item => {
+    const list = results.filter(item => {
       if (mediaFilter === 'all') return true;
       const mediaType = item.media_type || (item.first_air_date ? 'tv' : 'movie');
       return mediaType === mediaFilter;
