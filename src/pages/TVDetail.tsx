@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Star, Calendar, Play, ArrowLeft, Youtube, Bookmark, Check, Share2, Sparkles, X, Tv, FastForward, Clock, ChevronRight, LayoutGrid, List } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
@@ -6,6 +6,8 @@ import { tmdb, type MovieDetail, type Episode, type Season, type CastMember } fr
 import { VideoSourceSelector } from '@/components/VideoSourceSelector';
 import { RecommendedShelf } from '@/components/RecommendedShelf';
 import { CineVibeMeter } from '@/components/CineVibeMeter';
+import { RatingsDisplay } from '@/components/RatingsDisplay';
+import { useOmdb } from '@/services/omdb';
 import { videoSources, type VideoSource } from '@/types/videoSources';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { toast } from 'sonner';
@@ -42,6 +44,20 @@ const TVDetailPage = () => {
   const [cast, setCast] = useState<CastMember[]>([]);
 
   const { isInWatchlist, toggleWatchlist } = useWatchlist();
+  const [imdbId, setImdbId] = useState<string | null>(null);
+
+  const omdbParams = useMemo(() => {
+    if (!show) return null;
+    const year = show.first_air_date ? new Date(show.first_air_date).getFullYear() : undefined;
+    return {
+      imdbId: imdbId || (show as any).imdb_id,
+      title: show.name,
+      year,
+      type: 'series' as const,
+    };
+  }, [show?.name, show?.first_air_date, (show as any)?.imdb_id, imdbId]);
+
+  const { data: omdbData } = useOmdb(omdbParams);
 
   useEffect(() => {
     const loadShow = async () => {
@@ -50,6 +66,13 @@ const TVDetailPage = () => {
       try {
         const data = await tmdb.getDetails(parseInt(id), 'tv');
         setShow(data as TVShowDetail);
+
+        // Fetch external IDs to obtain official IMDb ID for TV show
+        tmdb.getExternalIds(parseInt(id), 'tv')
+          .then((ext) => {
+            if (ext?.imdb_id) setImdbId(ext.imdb_id);
+          })
+          .catch(() => {});
 
         const videosData = await tmdb.getVideos(parseInt(id), 'tv');
         const officialTrailer = videosData.results?.find(
@@ -485,7 +508,7 @@ const TVDetailPage = () => {
 
                 {/* ── MovieGuy Meter (Under Poster - Desktop Only) ── */}
                 <div className="hidden md:block w-full max-w-full min-w-0">
-                  <CineVibeMeter movie={show} />
+                  <CineVibeMeter movie={show} imdbRating={omdbData?.imdbRating} />
                 </div>
               </div>
 
@@ -496,6 +519,8 @@ const TVDetailPage = () => {
                   <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-amber-400 text-black">
                     TV SERIES
                   </span>
+                  {/* OMDb Ratings Badges (Age Advisory, IMDb, Rotten Tomatoes, Metascore) */}
+                  <RatingsDisplay data={omdbData} variant="badges" />
                   {rating && (
                     <span className="flex items-center gap-1 text-xs font-bold px-3 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-amber-400">
                       <Star className="w-3.5 h-3.5 fill-amber-400" />
@@ -577,6 +602,21 @@ const TVDetailPage = () => {
                   </div>
                 </div>
 
+                {/* ── Multi-Source Ratings Grid (IMDb, Rotten Tomatoes, Metacritic, TMDB) ── */}
+                <RatingsDisplay
+                  data={omdbData}
+                  tmdbRating={show.vote_average}
+                  variant="cards"
+                  className="mb-6"
+                />
+
+                {/* ── Accolades Banner (if available) ── */}
+                <RatingsDisplay
+                  data={omdbData}
+                  variant="banner"
+                  className="mb-6"
+                />
+
                 {/* Storyline Overview */}
                 <div className="mb-6 w-full max-w-full min-w-0">
                   <h3 className="font-display font-bold text-lg text-white mb-2 flex items-center gap-2">
@@ -590,7 +630,7 @@ const TVDetailPage = () => {
 
                 {/* ── MovieGuy Meter (Mobile Only - Placed after Storyline so info comes first) ── */}
                 <div className="block md:hidden my-6 w-full max-w-full min-w-0">
-                  <CineVibeMeter movie={show} />
+                  <CineVibeMeter movie={show} imdbRating={omdbData?.imdbRating} />
                 </div>
 
                 {/* ── Season Selector & Episode Cards (In empty area beside MovieGuy Meter) ── */}

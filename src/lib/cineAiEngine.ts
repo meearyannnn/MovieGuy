@@ -205,17 +205,23 @@ export interface IntelligentScoreResult {
   };
 }
 
-export const calculateIntelligentScore = (movie: Movie, runtime?: number): IntelligentScoreResult => {
+export const calculateIntelligentScore = (
+  movie: Movie,
+  runtime?: number,
+  imdbRating?: number | null
+): IntelligentScoreResult => {
   const voteAvg = movie.vote_average != null && !isNaN(movie.vote_average) ? movie.vote_average : 6.0;
   const voteCount = movie.vote_count != null && !isNaN(movie.vote_count) ? movie.vote_count : 100;
   const overview = (movie.overview || '').toLowerCase();
   const genres = movie.genre_ids || (movie as any).genres?.map((g: any) => g.id) || [];
 
   // 1. Dynamic Confidence Weighting:
-  // Trust the movie's actual vote_average directly.
-  // Only lightly smooth toward a neutral 6.0 when sample size is very tiny (< 25 votes).
+  // When IMDb rating is provided via OMDb, blend IMDb (65%) and TMDB (35%) for maximum realism.
+  // Otherwise, trust the movie's vote_average directly with smoothing for tiny sample sizes.
   let rating = voteAvg;
-  if (voteCount < 25 && voteCount > 0) {
+  if (imdbRating != null && !isNaN(imdbRating) && imdbRating > 0) {
+    rating = Number((imdbRating * 0.65 + voteAvg * 0.35).toFixed(2));
+  } else if (voteCount < 25 && voteCount > 0) {
     rating = (voteCount / (voteCount + 15)) * voteAvg + (15 / (voteCount + 15)) * 6.0;
   }
 

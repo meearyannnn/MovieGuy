@@ -9,6 +9,7 @@ import {
 interface CineVibeMeterProps {
   movie: Movie;
   runtime?: number;
+  imdbRating?: number | null;
 }
 
 function GenreBar({ name, percent, color, index }: { name: string; percent: number; color: string; index: number }) {
@@ -40,8 +41,11 @@ function GenreBar({ name, percent, color, index }: { name: string; percent: numb
   );
 }
 
-export const CineVibeMeter = ({ movie, runtime }: CineVibeMeterProps) => {
-  const intel = useMemo(() => calculateIntelligentScore(movie, runtime), [movie, runtime]);
+export const CineVibeMeter = ({ movie, runtime, imdbRating }: CineVibeMeterProps) => {
+  const intel = useMemo(
+    () => calculateIntelligentScore(movie, runtime, imdbRating),
+    [movie, runtime, imdbRating]
+  );
   const vibeChart = useMemo(() => calculateVibeChartData(movie), [movie]);
   const meterData = useMemo(() => calculateMeterData(intel.overallScore), [intel.overallScore]);
 

@@ -17,6 +17,7 @@ export interface Movie {
 }
 
 export interface MovieDetail extends Movie {
+  imdb_id?: string;
   genres: { id: number; name: string }[];
   runtime?: number;
   number_of_seasons?: number;
@@ -85,6 +86,9 @@ export const tmdb = {
 
   getDetails: (id: number, type: 'movie' | 'tv' = 'movie') =>
     tmdbFetch(`/${type}/${id}`),
+
+  getExternalIds: (id: number, type: 'movie' | 'tv' = 'tv') =>
+    tmdbFetch(`/${type}/${id}/external_ids`),
 
   getSeasonDetails: (tvId: number, seasonNumber: number) =>
     tmdbFetch(`/tv/${tvId}/season/${seasonNumber}`),

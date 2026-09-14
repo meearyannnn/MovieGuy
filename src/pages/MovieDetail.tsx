@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Star, Calendar, Clock, Bookmark, Check, Play, ArrowLeft, Youtube, Share2, Sparkles, X } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
@@ -6,6 +6,8 @@ import { tmdb, type MovieDetail, type CastMember } from '@/services/tmdb';
 import { VideoSourceSelector } from '@/components/VideoSourceSelector';
 import { RecommendedShelf } from '@/components/RecommendedShelf';
 import { CineVibeMeter } from '@/components/CineVibeMeter';
+import { RatingsDisplay } from '@/components/RatingsDisplay';
+import { useOmdb } from '@/services/omdb';
 import { videoSources, type VideoSource } from '@/types/videoSources';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { toast } from 'sonner';
@@ -31,6 +33,19 @@ const MovieDetailPage = () => {
   const [cast, setCast] = useState<CastMember[]>([]);
 
   const { isInWatchlist, toggleWatchlist } = useWatchlist();
+
+  const omdbParams = useMemo(() => {
+    if (!movie) return null;
+    const releaseYear = movie.release_date ? new Date(movie.release_date).getFullYear() : undefined;
+    return {
+      imdbId: movie.imdb_id,
+      title: movie.title,
+      year: releaseYear,
+      type: 'movie' as const,
+    };
+  }, [movie?.imdb_id, movie?.title, movie?.release_date]);
+
+  const { data: omdbData } = useOmdb(omdbParams);
 
   useEffect(() => {
     const loadMovie = async () => {
@@ -240,7 +255,7 @@ const MovieDetailPage = () => {
 
                 {/* ── MovieGuy Meter (Under Poster - Desktop Only) ── */}
                 <div className="hidden md:block">
-                  <CineVibeMeter movie={movie} runtime={movie.runtime} />
+                  <CineVibeMeter movie={movie} runtime={movie.runtime} imdbRating={omdbData?.imdbRating} />
                 </div>
               </div>
 
@@ -251,6 +266,8 @@ const MovieDetailPage = () => {
                   <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-amber-400 text-black">
                     4K ULTRA HD
                   </span>
+                  {/* OMDb Ratings Badges (Age Advisory, IMDb, Rotten Tomatoes, Metascore) */}
+                  <RatingsDisplay data={omdbData} variant="badges" />
                   {rating && (
                     <span className="flex items-center gap-1 text-xs font-bold px-3 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-amber-400">
                       <Star className="w-3.5 h-3.5 fill-amber-400" />
@@ -335,6 +352,21 @@ const MovieDetailPage = () => {
                   </div>
                 </div>
 
+                {/* ── Multi-Source Ratings Grid (IMDb, Rotten Tomatoes, Metacritic, TMDB) ── */}
+                <RatingsDisplay
+                  data={omdbData}
+                  tmdbRating={movie.vote_average}
+                  variant="cards"
+                  className="mb-6"
+                />
+
+                {/* ── Accolades & Box Office Banner (if available) ── */}
+                <RatingsDisplay
+                  data={omdbData}
+                  variant="banner"
+                  className="mb-6"
+                />
+
                 {/* Overview */}
                 <div className="mb-6 w-full max-w-full min-w-0">
                   <h3 className="font-display font-bold text-lg text-white mb-2 flex items-center gap-2">
@@ -348,7 +380,7 @@ const MovieDetailPage = () => {
 
                 {/* ── MovieGuy Meter (Mobile Only - Placed after Storyline so info comes first) ── */}
                 <div className="block md:hidden my-6 w-full max-w-full min-w-0">
-                  <CineVibeMeter movie={movie} runtime={movie.runtime} />
+                  <CineVibeMeter movie={movie} runtime={movie.runtime} imdbRating={omdbData?.imdbRating} />
                 </div>
 
                 {/* Cast Members Showcase */}
