@@ -352,20 +352,8 @@ const MovieDetailPage = () => {
                   </div>
                 </div>
 
-                {/* ── Multi-Source Ratings Grid (IMDb, Rotten Tomatoes, Metacritic, TMDB) ── */}
-                <RatingsDisplay
-                  data={omdbData}
-                  tmdbRating={movie.vote_average}
-                  variant="cards"
-                  className="mb-6"
-                />
-
-                {/* ── Accolades & Box Office Banner (if available) ── */}
-                <RatingsDisplay
-                  data={omdbData}
-                  variant="banner"
-                  className="mb-6"
-                />
+                {/* Awards Line (simple and minimal) */}
+                <RatingsDisplay data={omdbData} variant="awards" className="mb-6" />
 
                 {/* Overview */}
                 <div className="mb-6 w-full max-w-full min-w-0">
