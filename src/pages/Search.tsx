@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Search as SearchIcon, X, Film, Tv, Sparkles, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { useState, useMemo, useRef, useCallback } from 'react';
+import { Search as SearchIcon, X, Film, Tv, Sparkles, ArrowUpDown } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { MovieCard } from '@/components/MovieCard';
 import { tmdb, type Movie } from '@/services/tmdb';
@@ -16,31 +16,83 @@ const SMART_SUGGESTIONS = [
   'Dark Crime Mysteries',
 ];
 
+// Calculate title match relevance: exact > starts-with > whole word > substring > overview
+const getTitleRelevance = (item: Movie, rawQuery: string): number => {
+  const q = rawQuery.trim().toLowerCase();
+  if (!q) return 0;
+
+  const title = (item.title || item.name || '').toLowerCase().trim();
+  const originalTitle = ((item as any).original_title || (item as any).original_name || '').toLowerCase().trim();
+
+  // 1. Exact match (highest priority)
+  if (title === q || originalTitle === q) return 1000;
+
+  // 2. Starts with query (e.g. "adipu" matches "Adipurush", "bat" matches "Batman")
+  if (title.startsWith(q) || originalTitle.startsWith(q)) return 800;
+
+  // 3. Exact word boundary match in title (e.g. "man" in "Iron Man", "knight" in "The Dark Knight")
+  const escapedQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const wordRegex = new RegExp(`(^|\\s|[\\-_:;])${escapedQ}($|\\s|[\\-_:;])`, 'i');
+  if (wordRegex.test(title) || wordRegex.test(originalTitle)) return 600;
+
+  // 4. Substring anywhere in title
+  if (title.includes(q) || originalTitle.includes(q)) return 400;
+
+  // 5. All query tokens present in title (for multi-word searches)
+  const tokens = q.split(/\s+/).filter(Boolean);
+  if (tokens.length > 1 && tokens.every(tok => title.includes(tok) || originalTitle.includes(tok))) {
+    return 350;
+  }
+
+  // 6. Overview match
+  const overview = (item.overview || '').toLowerCase();
+  if (overview.includes(q)) return 100;
+
+  return 0;
+};
+
 export const SearchPage = () => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Movie[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [mediaFilter, setMediaFilter] = useState<'all' | 'movie' | 'tv'>('all');
   const [sortBy, setSortBy] = useState<'smart' | 'rating' | 'latest'>('smart');
+  const searchIdRef = useRef(0);
 
-  const executeSmartSearch = async (searchQuery: string) => {
-    setQuery(searchQuery);
+  const executeSmartSearch = useCallback(async (searchQuery: string) => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) {
       setResults([]);
+      setIsSearching(false);
       return;
     }
 
+    const currentSearchId = ++searchIdRef.current;
     setIsSearching(true);
-    try {
-      // 1. Direct Title Search
-      const searchData = await tmdb.search(searchQuery);
-      const list = searchData.results || [];
 
-      // 2. If results are few or query is thematic/semantic, blend with smart discovery
-      if (list.length < 5 || q.includes('under 90') || q.includes('sci-fi') || q.includes('thriller') || q.includes('mystery') || q.includes('action') || q.includes('90s')) {
-        let discoverQuery = 'sort_by=vote_count.desc&vote_count.gte=200&page=1';
-        
+    try {
+      // 1. Direct Search via TMDB
+      const searchData = await tmdb.search(searchQuery);
+      const list: Movie[] = (searchData.results || []).filter((m: Movie) => m.poster_path);
+
+      // Check if user's query is explicitly an abstract/genre concept rather than a movie title
+      const isThematicQuery =
+        q.includes('under 90') ||
+        q.includes('sci-fi') ||
+        q.includes('thriller') ||
+        q.includes('mystery') ||
+        q.includes('action') ||
+        q.includes('comedy') ||
+        q.includes('horror') ||
+        q.includes('90s');
+
+      // ONLY blend with discovery if:
+      // - The user's query is explicitly a thematic category (e.g. "90s action thrillers", "movies under 90 mins")
+      // - OR if title search returned 0 results as a fallback
+      // (NEVER inject random all-time movies when user searched for a specific title!)
+      if (isThematicQuery || list.length === 0) {
+        let discoverQuery = 'sort_by=vote_count.desc&vote_count.gte=150&page=1';
+
         if (q.includes('under 90')) {
           discoverQuery += '&with_runtime.lte=90';
         }
@@ -61,10 +113,9 @@ export const SearchPage = () => {
         }
 
         const discData = await tmdb.discover('movie', discoverQuery);
-        const discResults = discData.results || [];
+        const discResults = (discData.results || []).filter((m: Movie) => m.poster_path);
 
-        // Deduplicate
-        const seen = new Set(list.map((m: Movie) => m.id));
+        const seen = new Set(list.map(m => m.id));
         for (const item of discResults) {
           if (!seen.has(item.id)) {
             seen.add(item.id);
@@ -73,13 +124,18 @@ export const SearchPage = () => {
         }
       }
 
-      setResults(list.filter((m: Movie) => m.poster_path));
+      // Avoid race conditions if user typed another character in the meantime
+      if (currentSearchId === searchIdRef.current) {
+        setResults(list);
+      }
     } catch (error) {
       console.error('Smart search error:', error);
     } finally {
-      setIsSearching(false);
+      if (currentSearchId === searchIdRef.current) {
+        setIsSearching(false);
+      }
     }
-  };
+  }, []);
 
   const handleInputChange = (val: string) => {
     setQuery(val);
@@ -88,37 +144,73 @@ export const SearchPage = () => {
 
   const handleChipClick = (suggestion: string) => {
     soundEffects.playHoverTick();
+    setQuery(suggestion);
     executeSmartSearch(suggestion);
   };
 
-  // Filter & Sort results with Smart Intelligent Score
+  // Filter & Sort results: Title Relevance ALWAYS prioritized first!
   const processedResults = useMemo(() => {
-    const list = results.filter(item => {
+    const filtered = results.filter(item => {
       if (mediaFilter === 'all') return true;
       const mediaType = item.media_type || (item.first_air_date ? 'tv' : 'movie');
       return mediaType === mediaFilter;
     });
 
-    // Attach intelligent scores
-    const withScores = list.map(item => ({
+    // Attach relevance and intelligent score
+    const scored = filtered.map(item => ({
       item,
+      relevance: getTitleRelevance(item, query),
       intelScore: calculateIntelligentScore(item),
     }));
 
     if (sortBy === 'smart') {
-      withScores.sort((a, b) => b.intelScore.overallScore - a.intelScore.overallScore);
+      scored.sort((a, b) => {
+        const isTitleMatchA = a.relevance >= 350;
+        const isTitleMatchB = b.relevance >= 350;
+
+        // Title matches strictly take precedence over non-title matches
+        if (isTitleMatchA !== isTitleMatchB) {
+          return isTitleMatchA ? -1 : 1;
+        }
+
+        // Higher title relevance wins
+        if (a.relevance !== b.relevance) {
+          return b.relevance - a.relevance;
+        }
+
+        // Among matching titles, rank by popularity / vote count first, then by score
+        const popA = (a.item as any).popularity || 0;
+        const popB = (b.item as any).popularity || 0;
+        if (Math.abs(popB - popA) > 10) {
+          return popB - popA;
+        }
+
+        return b.intelScore.overallScore - a.intelScore.overallScore;
+      });
     } else if (sortBy === 'rating') {
-      withScores.sort((a, b) => (b.item.vote_average || 0) - (a.item.vote_average || 0));
+      scored.sort((a, b) => {
+        const isTitleMatchA = a.relevance >= 350;
+        const isTitleMatchB = b.relevance >= 350;
+        if (isTitleMatchA !== isTitleMatchB) {
+          return isTitleMatchA ? -1 : 1;
+        }
+        return (b.item.vote_average || 0) - (a.item.vote_average || 0);
+      });
     } else if (sortBy === 'latest') {
-      withScores.sort((a, b) => {
+      scored.sort((a, b) => {
+        const isTitleMatchA = a.relevance >= 350;
+        const isTitleMatchB = b.relevance >= 350;
+        if (isTitleMatchA !== isTitleMatchB) {
+          return isTitleMatchA ? -1 : 1;
+        }
         const dateA = new Date(a.item.release_date || a.item.first_air_date || 0).getTime();
         const dateB = new Date(b.item.release_date || b.item.first_air_date || 0).getTime();
         return dateB - dateA;
       });
     }
 
-    return withScores;
-  }, [results, mediaFilter, sortBy]);
+    return scored;
+  }, [results, mediaFilter, sortBy, query]);
 
   return (
     <div className="min-h-screen bg-[#07080b] text-[#f8fafc] overflow-x-hidden selection:bg-amber-400 selection:text-black">
