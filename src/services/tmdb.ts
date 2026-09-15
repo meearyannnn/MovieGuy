@@ -84,8 +84,14 @@ export const tmdb = {
   search: (query: string, type: 'movie' | 'tv' | 'multi' = 'multi') =>
     tmdbFetch(`/search/${type}?query=${encodeURIComponent(query)}`),
 
-  getDetails: (id: number, type: 'movie' | 'tv' = 'movie') =>
+  getDetails: (id: number, type: 'movie' | 'tv' | 'person' = 'movie') =>
     tmdbFetch(`/${type}/${id}`),
+
+  getPersonDetails: (personId: number) =>
+    tmdbFetch(`/person/${personId}`),
+
+  getPersonCombinedCredits: (personId: number) =>
+    tmdbFetch(`/person/${personId}/combined_credits`),
 
   getExternalIds: (id: number, type: 'movie' | 'tv' = 'tv') =>
     tmdbFetch(`/${type}/${id}/external_ids`),

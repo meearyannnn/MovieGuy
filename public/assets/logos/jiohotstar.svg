@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a051b"/>
+      <stop offset="100%" stop-color="#190a3c"/>
+    </linearGradient>
+    <linearGradient id="star1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00D2FF"/>
+      <stop offset="100%" stop-color="#3A7BD5"/>
+    </linearGradient>
+    <linearGradient id="star2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF007A"/>
+      <stop offset="100%" stop-color="#7928CA"/>
+    </linearGradient>
+    <linearGradient id="star3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFB300"/>
+      <stop offset="100%" stop-color="#FF5252"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Container -->
+  <rect width="48" height="48" rx="10" fill="url(#bgGrad)"/>
+  
+  <!-- JioHotstar Multicolored Sparkle / Starburst -->
+  <g transform="translate(24, 24)">
+    <!-- Cyan Ray -->
+    <path d="M0 0 L0 -18 L3.5 -5 Z" fill="url(#star1)"/>
+    <path d="M0 0 L0 -18 L-3.5 -5 Z" fill="#00f0ff"/>
+    <!-- Magenta Ray -->
+    <path d="M0 0 L0 18 L3.5 5 Z" fill="url(#star2)"/>
+    <path d="M0 0 L0 18 L-3.5 5 Z" fill="#ff007a"/>
+    <!-- Horizontal Rays -->
+    <path d="M0 0 L18 0 L5 3.5 Z" fill="url(#star3)"/>
+    <path d="M0 0 L18 0 L5 -3.5 Z" fill="#ffcc00"/>
+    <path d="M0 0 L-18 0 L-5 3.5 Z" fill="url(#star1)"/>
+    <path d="M0 0 L-18 0 L-5 -3.5 Z" fill="#00d2ff"/>
+    <!-- Diagonal Rays -->
+    <path d="M0 0 L12.5 -12.5 L2.5 -4.5 Z" fill="#ff3366"/>
+    <path d="M0 0 L-12.5 12.5 L-2.5 4.5 Z" fill="#7928ca"/>
+    <path d="M0 0 L12.5 12.5 L4.5 2.5 Z" fill="#ffaa00"/>
+    <path d="M0 0 L-12.5 -12.5 L-4.5 -2.5 Z" fill="#00d2ff"/>
+    
+    <!-- Central Bright Core -->
+    <circle cx="0" cy="0" r="3" fill="#ffffff"/>
+  </g>
+</svg>

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Navbar } from '@/components/Navbar';
 import { MovieCard } from '@/components/MovieCard';
+import { Navbar } from '@/components/Navbar';
+import { TraktShowsShelves } from '@/components/TraktShowsShelves';
+import { WebChannelsSection } from '@/components/WebChannelsSection';
 import { tmdb, type Movie } from '@/services/tmdb';
 import { Tv, Flame, TrendingUp, Award } from 'lucide-react';
 
@@ -94,6 +96,12 @@ const TVPage = () => {
             </button>
           </div>
         </div>
+
+        {/* ── Web Channels & Networks Showcase ── */}
+        <WebChannelsSection />
+
+        {/* ── Anticipated & Most Watched Series Shelves ── */}
+        <TraktShowsShelves />
 
         {/* ── TV Grid ── */}
         {loading ? (

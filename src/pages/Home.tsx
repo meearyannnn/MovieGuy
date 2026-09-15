@@ -3,6 +3,8 @@ import { Hero } from '@/components/Hero';
 import { MovieRow } from '@/components/MovieRow';
 import { Navbar } from '@/components/Navbar';
 import { ContinueWatching } from '@/components/ContinueWatching';
+import { TraktAnticipatedShelf } from '@/components/TraktAnticipatedShelf';
+import { HomeCuratedShelves } from '@/components/HomeCuratedShelves';
 import { tmdb, type Movie } from '@/services/tmdb';
 import { useWatchProgress } from '@/hooks/useWatchProgress';
 import { useWatchlist } from '@/hooks/useWatchlist';
@@ -79,6 +81,9 @@ const Home = () => {
             </section>
           )}
 
+          {/* Curated Platform & Hype Shelves (Talk of the Town, Prime, Netflix, JioHotstar, District) */}
+          <HomeCuratedShelves />
+
           {/* Latest Releases */}
           <section className="space-y-4">
             <SectionHeading
@@ -100,6 +105,9 @@ const Home = () => {
             />
             <MovieRow fetchData={() => tmdb.getPopular('movie')} />
           </section>
+
+          {/* Trakt Most Anticipated Movies */}
+          <TraktAnticipatedShelf />
 
           {/* Top Rated Movies */}
           <section className="space-y-4">

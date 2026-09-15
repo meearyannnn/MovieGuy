@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { MovieCard } from '@/components/MovieCard';
+import { WebChannelsSection } from '@/components/WebChannelsSection';
+import { MoviesShelves } from '@/components/MoviesShelves';
 import { tmdb, type Movie } from '@/services/tmdb';
 import { Clapperboard, Flame, TrendingUp, Award } from 'lucide-react';
 
@@ -61,39 +63,42 @@ const MoviesPage = () => {
           <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md">
             <button
               onClick={() => setActiveTab('trending')}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'trending'
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'trending'
                   ? 'bg-amber-400 text-black shadow-md shadow-amber-400/30'
                   : 'text-white/70 hover:text-white hover:bg-white/5'
-              }`}
+                }`}
             >
               <Flame className="w-3.5 h-3.5" />
               Trending This Week
             </button>
             <button
               onClick={() => setActiveTab('popular')}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'popular'
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'popular'
                   ? 'bg-amber-400 text-black shadow-md shadow-amber-400/30'
                   : 'text-white/70 hover:text-white hover:bg-white/5'
-              }`}
+                }`}
             >
               <TrendingUp className="w-3.5 h-3.5" />
               Popular
             </button>
             <button
               onClick={() => setActiveTab('topRated')}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'topRated'
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'topRated'
                   ? 'bg-amber-400 text-black shadow-md shadow-amber-400/30'
                   : 'text-white/70 hover:text-white hover:bg-white/5'
-              }`}
+                }`}
             >
               <Award className="w-3.5 h-3.5" />
               Top Rated
             </button>
           </div>
         </div>
+
+        {/* ── Web Channels & Streaming Networks Showcase ── */}
+        <WebChannelsSection initialTab="movies" />
+
+        {/* ── Most Anticipated & Most Watched Movies Shelves ── */}
+        <MoviesShelves />
 
         {/* ── Movie Grid ── */}
         {loading ? (

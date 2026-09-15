@@ -14,6 +14,11 @@ import Genres from "./pages/Genres";
 import NotFound from "./pages/NotFound";
 import RecommendationsPage from '@/pages/RecommendationsPage';
 import TimeMachinePage from '@/pages/TimeMachinePage';
+import SchedulePage from '@/pages/SchedulePage';
+import ExplorePage from '@/pages/ExplorePage';
+import LanguagesPage from '@/pages/LanguagesPage';
+import CategoriesPage from '@/pages/CategoriesPage';
+import CountriesPage from '@/pages/CountriesPage';
 import { CineAiCopilot } from '@/components/CineAiCopilot';
 
 // Optimized QueryClient configuration for better performance
@@ -61,6 +66,11 @@ const App = () => (
           <Route path="/tv/:id" element={<TVDetail />} />
           <Route path="/recommendations" element={<RecommendationsPage />} />
           <Route path="/time-machine" element={<TimeMachinePage />} />
+          <Route path="/schedule" element={<SchedulePage />} />
+          <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/languages" element={<LanguagesPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/countries" element={<CountriesPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

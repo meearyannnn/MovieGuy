@@ -7,6 +7,7 @@ import { VideoSourceSelector } from '@/components/VideoSourceSelector';
 import { RecommendedShelf } from '@/components/RecommendedShelf';
 import { CineVibeMeter } from '@/components/CineVibeMeter';
 import { RatingsDisplay } from '@/components/RatingsDisplay';
+import { ActorFilmographyModal } from '@/components/ActorFilmographyModal';
 import { useOmdb } from '@/services/omdb';
 import { videoSources, type VideoSource } from '@/types/videoSources';
 import { useWatchlist } from '@/hooks/useWatchlist';
@@ -42,6 +43,7 @@ const TVDetailPage = () => {
   const [selectedSource, setSelectedSource] = useState<VideoSource>(videoSources[0]);
   const [trailer, setTrailer] = useState<VideoTrailer | null>(null);
   const [cast, setCast] = useState<CastMember[]>([]);
+  const [selectedActor, setSelectedActor] = useState<{ id: number; name: string } | null>(null);
 
   const { isInWatchlist, toggleWatchlist } = useWatchlist();
   const [imdbId, setImdbId] = useState<string | null>(null);
@@ -822,15 +824,20 @@ const TVDetailPage = () => {
                 </h3>
                 <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 w-full max-w-full min-w-0 touch-pan-x">
                   {cast.map(member => (
-                    <div key={member.id} className="flex-none w-20 sm:w-24 text-center group">
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full overflow-hidden border-2 border-white/10 group-hover:border-amber-400 transition-colors bg-neutral-900 shadow-lg">
+                    <div
+                      key={member.id}
+                      onClick={() => setSelectedActor({ id: member.id, name: member.name })}
+                      className="flex-none w-20 sm:w-24 text-center group cursor-pointer touch-feedback"
+                      title={`View ${member.name}'s filmography`}
+                    >
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full overflow-hidden border-2 border-white/10 group-hover:border-amber-400 group-hover:scale-105 transition-all bg-neutral-900 shadow-lg">
                         <img
                           src={member.profile_path ? `https://image.tmdb.org/t/p/w200${member.profile_path}` : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
                           alt={member.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                         />
                       </div>
-                      <span className="font-display font-semibold text-xs text-white block mt-2 truncate">
+                      <span className="font-display font-semibold text-xs text-white group-hover:text-amber-400 block mt-2 truncate transition-colors">
                         {member.name}
                       </span>
                       <span className="text-[10px] text-white/40 block truncate">
@@ -853,6 +860,14 @@ const TVDetailPage = () => {
           </div>
         </div>
       )}
+
+      {/* ── Actor Filmography Modal ── */}
+      <ActorFilmographyModal
+        actorId={selectedActor?.id || null}
+        actorName={selectedActor?.name || null}
+        isOpen={!!selectedActor}
+        onClose={() => setSelectedActor(null)}
+      />
 
       {/* ── Trailer Modal ── */}
       {showTrailer && trailer && (

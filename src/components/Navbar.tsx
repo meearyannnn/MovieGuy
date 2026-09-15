@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Home, Clapperboard, Tv, Sparkles, Bookmark, Film, Dices, Volume2, VolumeX, HelpCircle, Hourglass, Flame, Dna } from 'lucide-react';
+import { Search, Menu, X, Home, Clapperboard, Tv, Sparkles, Bookmark, Film, Dices, Volume2, VolumeX, HelpCircle, Hourglass, Flame, Dna, Calendar, Coffee, LayoutGrid, Bell, User } from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { soundEffects } from '@/lib/soundEffects';
@@ -8,6 +8,7 @@ import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { ReelSwiperModal } from './ReelSwiperModal';
 import { CineDnaModal } from './CineDnaModal';
 import { MidnightVaultModal } from './MidnightVaultModal';
+import { ExploreHubModal } from './ExploreHubModal';
 
 export const Navbar = () => {
   const location = useLocation();
@@ -20,6 +21,8 @@ export const Navbar = () => {
   const [showSwiperModal, setShowSwiperModal] = useState(false);
   const [showDnaModal, setShowDnaModal] = useState(false);
   const [showVaultModal, setShowVaultModal] = useState(false);
+  const [showExploreHub, setShowExploreHub] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [soundOn, setSoundOn] = useState(() => soundEffects.getSoundEnabled());
   const keySequenceRef = useRef<string>('');
 
@@ -49,6 +52,8 @@ export const Navbar = () => {
         setShowSwiperModal(false);
         setShowDnaModal(false);
         setShowVaultModal(false);
+        setShowExploreHub(false);
+        setShowNotificationModal(false);
         return;
       }
 
@@ -99,6 +104,7 @@ export const Navbar = () => {
     { path: '/', label: 'Home' },
     { path: '/movies', label: 'Movies' },
     { path: '/tv', label: 'TV Shows' },
+    { path: '/schedule', label: 'Schedule' },
     { path: '/genres', label: 'Genres' },
     { path: '/recommendations', label: 'AI Vibes' },
     { path: '/time-machine', label: 'Time Machine' },
@@ -151,25 +157,39 @@ export const Navbar = () => {
             })}
           </nav>
 
-          {/* ── Right Actions ── */}
-          <div className="flex items-center gap-2">
-            {/* Quick Search Button */}
-            {!isSearchPage && (
-              <button
-                onClick={() => {
-                  soundEffects.playHoverTick();
-                  navigate('/search');
-                }}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-white/70 hover:text-white transition-all text-xs font-medium backdrop-blur-md"
-                aria-label="Search"
-                title="Search (/)"
-              >
-                <Search className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">Search</span>
-              </button>
-            )}
+          {/* ── Right Actions Suite (Calendar, Coffee, Bookmark, 2x2 Grid Hub, Bell, Search, Profile) ── */}
+          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
+            {/* 1. Calendar (Schedule) */}
+            <button
+              onClick={() => {
+                soundEffects.playHoverTick();
+                navigate('/schedule');
+              }}
+              className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full transition-all ${
+                location.pathname === '/schedule'
+                  ? 'bg-amber-400 text-black shadow-md shadow-amber-400/30'
+                  : 'bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-white/70 hover:text-white'
+              }`}
+              title="Release Schedule"
+              aria-label="Release Schedule"
+            >
+              <Calendar className="w-4 h-4" />
+            </button>
 
-            {/* Watchlist Counter Button */}
+            {/* 2. Coffee Break (Roulette) */}
+            <button
+              onClick={() => {
+                soundEffects.playHoverTick();
+                setShowRouletteModal(true);
+              }}
+              className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-white/70 hover:text-white transition-all"
+              title="Cinema Coffee Break (Random Pick)"
+              aria-label="Cinema Coffee Break"
+            >
+              <Coffee className="w-4 h-4" />
+            </button>
+
+            {/* 3. Bookmark (Watchlist) */}
             <button
               onClick={() => {
                 soundEffects.playHoverTick();
@@ -187,13 +207,107 @@ export const Navbar = () => {
               )}
             </button>
 
-            {/* Menu Toggle */}
+            {/* 4. 2x2 Grid Hub (㗊) matching screenshot */}
             <button
               onClick={() => {
                 soundEffects.playHoverTick();
-                setIsOpen(prev => !prev);
+                setShowExploreHub((prev) => !prev);
               }}
-              className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-white/80 hover:text-white transition-colors"
+              className={`relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full transition-all ${
+                showExploreHub
+                  ? 'bg-white text-black font-extrabold shadow-lg shadow-white/30 border border-white scale-105'
+                  : 'bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-white/85 hover:text-white'
+              }`}
+              aria-label="Explore Cinema Hub"
+              title="Explore Cinema Hub"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+
+            {/* 5. Notification Bell */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  soundEffects.playHoverTick();
+                  setShowNotificationModal((prev) => !prev);
+                }}
+                className={`relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full transition-all ${
+                  showNotificationModal
+                    ? 'bg-amber-400 text-black shadow-md shadow-amber-400/20'
+                    : 'bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-white/70 hover:text-white'
+                }`}
+                title="Notifications"
+                aria-label="Notifications"
+              >
+                <Bell className="w-4 h-4" />
+                <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-amber-400" />
+              </button>
+
+              {/* Notification Popover */}
+              {showNotificationModal && (
+                <div className="absolute right-0 top-11 w-72 bg-[#0c0e15]/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-3 shadow-2xl shadow-black/80 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10">
+                    <span className="text-[11px] font-mono font-bold text-white/80 uppercase tracking-wider">
+                      Cinema Updates
+                    </span>
+                    <button
+                      onClick={() => setShowNotificationModal(false)}
+                      className="text-white/40 hover:text-white text-xs px-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="space-y-2 text-xs">
+                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 hover:border-amber-400/30 transition-all">
+                      <p className="font-semibold text-white">Reacher Season 3</p>
+                      <p className="text-[11px] text-white/50">Streaming on Prime Video</p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 hover:border-amber-400/30 transition-all">
+                      <p className="font-semibold text-white">Lanterns Season 1</p>
+                      <p className="text-[11px] text-white/50">New Episode 5 now available</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 6. Quick Search */}
+            <button
+              onClick={() => {
+                soundEffects.playHoverTick();
+                navigate('/search');
+              }}
+              className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full transition-all ${
+                isSearchPage
+                  ? 'bg-amber-400 text-black shadow-md shadow-amber-400/20'
+                  : 'bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-white/70 hover:text-white'
+              }`}
+              aria-label="Search"
+              title="Search (/)"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+
+            {/* 7. User Avatar (DNA / Profile) */}
+            <button
+              onClick={() => {
+                soundEffects.playHoverTick();
+                setShowDnaModal(true);
+              }}
+              className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-neutral-600 to-neutral-400 border border-white/20 text-white hover:scale-105 transition-all shadow-sm"
+              title="Cinephile DNA Profile"
+              aria-label="Cinephile DNA Profile"
+            >
+              <User className="w-4 h-4" />
+            </button>
+
+            {/* Mobile Drawer Menu Toggle */}
+            <button
+              onClick={() => {
+                soundEffects.playHoverTick();
+                setIsOpen((prev) => !prev);
+              }}
+              className="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-white/80 hover:text-white transition-colors"
               aria-label="Toggle Menu"
             >
               {isOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -491,6 +605,12 @@ export const Navbar = () => {
       <MidnightVaultModal
         isOpen={showVaultModal}
         onClose={() => setShowVaultModal(false)}
+      />
+
+      {/* ── Explore Cinema Hub (㗊) Modal matching screenshot ── */}
+      <ExploreHubModal
+        isOpen={showExploreHub}
+        onClose={() => setShowExploreHub(false)}
       />
     </>
   );
