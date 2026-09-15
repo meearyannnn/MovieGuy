@@ -1,5 +1,27 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Home, Clapperboard, Tv, Sparkles, Bookmark, Film, Dices, Volume2, VolumeX, HelpCircle, Hourglass, Flame, Dna, Calendar, Coffee, LayoutGrid, Bell, User } from 'lucide-react';
+import {
+  Search,
+  Menu,
+  X,
+  Home,
+  Clapperboard,
+  Tv,
+  Sparkles,
+  Bookmark,
+  Film,
+  Dices,
+  Volume2,
+  VolumeX,
+  HelpCircle,
+  Hourglass,
+  Flame,
+  Dna,
+  Calendar,
+  Coffee,
+  LayoutGrid,
+  Bell,
+  User,
+} from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { soundEffects } from '@/lib/soundEffects';
@@ -28,14 +50,17 @@ export const Navbar = () => {
 
   const { watchlist, removeFromWatchlist } = useWatchlist();
 
-  const isActive = useCallback((path: string) => location.pathname === path, [location.pathname]);
+  const isActive = useCallback(
+    (path: string) => location.pathname === path,
+    [location.pathname]
+  );
   const isSearchPage = location.pathname === '/search';
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -43,7 +68,8 @@ export const Navbar = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
-      const isInput = activeEl?.tagName === 'INPUT' || activeEl?.tagName === 'TEXTAREA';
+      const isInput =
+        activeEl?.tagName === 'INPUT' || activeEl?.tagName === 'TEXTAREA';
 
       if (e.key === 'Escape') {
         setShowWatchlistModal(false);
@@ -54,12 +80,12 @@ export const Navbar = () => {
         setShowVaultModal(false);
         setShowExploreHub(false);
         setShowNotificationModal(false);
+        setIsOpen(false);
         return;
       }
 
-      if (isInput) return; // Don't intercept when user is typing in a field
+      if (isInput) return;
 
-      // Secret vault detection
       keySequenceRef.current = (keySequenceRef.current + e.key.toLowerCase()).slice(-5);
       if (keySequenceRef.current === 'vault' || keySequenceRef.current.endsWith('cult')) {
         soundEffects.playSlide();
@@ -75,11 +101,11 @@ export const Navbar = () => {
       } else if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
         soundEffects.playHoverTick();
-        setShowRouletteModal(prev => !prev);
+        setShowRouletteModal((prev) => !prev);
       } else if (e.key === 's' || e.key === 'S') {
         e.preventDefault();
         soundEffects.playHoverTick();
-        setShowSwiperModal(prev => !prev);
+        setShowSwiperModal((prev) => !prev);
       } else if (e.key === 'm' || e.key === 'M') {
         e.preventDefault();
         const newState = soundEffects.toggleSound();
@@ -87,7 +113,7 @@ export const Navbar = () => {
       } else if (e.key === '?') {
         e.preventDefault();
         soundEffects.playHoverTick();
-        setShowShortcutsModal(prev => !prev);
+        setShowShortcutsModal((prev) => !prev);
       }
     };
 
@@ -100,15 +126,19 @@ export const Navbar = () => {
     setSoundOn(newState);
   };
 
-  const navItems = useMemo(() => [
-    { path: '/', label: 'Home' },
-    { path: '/movies', label: 'Movies' },
-    { path: '/tv', label: 'TV Shows' },
-    { path: '/schedule', label: 'Schedule' },
-    { path: '/genres', label: 'Genres' },
-    { path: '/recommendations', label: 'AI Vibes' },
-    { path: '/time-machine', label: 'Time Machine' },
-  ], []);
+  // Original PC navigation links
+  const navItems = useMemo(
+    () => [
+      { path: '/', label: 'Home' },
+      { path: '/movies', label: 'Movies' },
+      { path: '/tv', label: 'TV Shows' },
+      { path: '/schedule', label: 'Schedule' },
+      { path: '/genres', label: 'Genres' },
+      { path: '/recommendations', label: 'AI Vibes' },
+      { path: '/time-machine', label: 'Time Machine' },
+    ],
+    []
+  );
 
   return (
     <>
@@ -119,12 +149,12 @@ export const Navbar = () => {
             : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent py-3'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          {/* ── Brand Logo ── */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between">
+          {/* ── Brand Logo (Same on PC, compact on Phone) ── */}
           <Link
             to="/"
             onClick={() => soundEffects.playHoverTick()}
-            className="flex items-center gap-2.5 group focus:outline-none"
+            className="flex items-center gap-2 sm:gap-2.5 group focus:outline-none shrink-0"
           >
             <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 shadow-md p-0.5 transition-transform duration-300 group-hover:scale-105">
               <div className="w-full h-full bg-[#07080b] rounded-[9px] flex items-center justify-center">
@@ -136,7 +166,7 @@ export const Navbar = () => {
             </span>
           </Link>
 
-          {/* ── Desktop Navigation Links ── */}
+          {/* ── Desktop Navigation Links (EXACT SAME AS BEFORE FOR PC) ── */}
           <nav className="hidden md:flex items-center gap-0.5 lg:gap-1 bg-white/[0.04] p-1 rounded-full border border-white/[0.08] backdrop-blur-xl">
             {navItems.map(({ path, label }) => {
               const active = isActive(path);
@@ -157,8 +187,8 @@ export const Navbar = () => {
             })}
           </nav>
 
-          {/* ── Right Actions Suite (Calendar, Coffee, Bookmark, 2x2 Grid Hub, Bell, Search, Profile) ── */}
-          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
+          {/* ── Desktop Right Actions Suite (EXACT SAME AS BEFORE FOR PC) ── */}
+          <div className="hidden md:flex items-center gap-1 sm:gap-1.5 md:gap-2">
             {/* 1. Calendar (Schedule) */}
             <button
               onClick={() => {
@@ -300,27 +330,143 @@ export const Navbar = () => {
             >
               <User className="w-4 h-4" />
             </button>
+          </div>
 
-            {/* Mobile Drawer Menu Toggle */}
+          {/* ── MOBILE ONLY HEADER ACTIONS (OPTIMIZED FOR PHONE: 4 CLEAN BUTTONS) ── */}
+          {/* Calendar, 2x2 Hub, Bell, Menu Drawer Toggle */}
+          <div className="flex md:hidden items-center gap-1.5 shrink-0">
+            {/* 1. Calendar (glowing amber when on /schedule) */}
+            <button
+              onClick={() => {
+                soundEffects.playHoverTick();
+                navigate('/schedule');
+              }}
+              className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 touch-feedback ${
+                isActive('/schedule')
+                  ? 'bg-amber-400 text-black font-bold border border-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.65)] ring-2 ring-amber-400/40'
+                  : 'bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white/80 hover:text-white'
+              }`}
+              title="Schedule"
+              aria-label="Schedule"
+            >
+              <Calendar className="w-4 h-4" />
+            </button>
+
+            {/* 2. 2x2 Cinema Hub (㗊) */}
+            <button
+              onClick={() => {
+                soundEffects.playHoverTick();
+                setShowExploreHub((prev) => !prev);
+              }}
+              className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 touch-feedback ${
+                showExploreHub
+                  ? 'bg-amber-400 text-black border border-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.5)]'
+                  : 'bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white/85 hover:text-white'
+              }`}
+              aria-label="Explore Cinema Hub"
+              title="Explore Cinema Hub"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+
+            {/* 3. Bell Notifications */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  soundEffects.playHoverTick();
+                  setShowNotificationModal((prev) => !prev);
+                }}
+                className={`relative flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 touch-feedback ${
+                  showNotificationModal
+                    ? 'bg-amber-400 text-black border border-amber-400 shadow-[0_0_16px_rgba(251,191,36,0.5)]'
+                    : 'bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white/80 hover:text-white'
+                }`}
+                title="Notifications"
+                aria-label="Notifications"
+              >
+                <Bell className="w-4 h-4" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-amber-400" />
+              </button>
+
+              {/* Mobile Notification Popover */}
+              {showNotificationModal && (
+                <div className="absolute right-0 top-10 w-72 max-w-[calc(100vw-2rem)] bg-[#0c0e15]/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-3 shadow-2xl shadow-black/90 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10">
+                    <span className="text-[11px] font-mono font-bold text-white/80 uppercase tracking-wider">
+                      Cinema Updates
+                    </span>
+                    <button
+                      onClick={() => setShowNotificationModal(false)}
+                      className="text-white/40 hover:text-white text-xs px-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="space-y-2 text-xs">
+                    <div className="p-2 rounded-xl bg-white/[0.03] border border-white/5">
+                      <p className="font-semibold text-white">Reacher Season 3</p>
+                      <p className="text-[11px] text-white/50">Streaming on Prime Video</p>
+                    </div>
+                    <div className="p-2 rounded-xl bg-white/[0.03] border border-white/5">
+                      <p className="font-semibold text-white">Lanterns Season 1</p>
+                      <p className="text-[11px] text-white/50">New Episode 5 available</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Drawer Menu Toggle (☰) */}
             <button
               onClick={() => {
                 soundEffects.playHoverTick();
                 setIsOpen((prev) => !prev);
               }}
-              className="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-white/80 hover:text-white transition-colors"
+              className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 touch-feedback ${
+                isOpen
+                  ? 'bg-amber-400 text-black font-bold border border-amber-400'
+                  : 'bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white/90 hover:text-white'
+              }`}
               aria-label="Toggle Menu"
+              title="Menu"
             >
               {isOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
           </div>
         </div>
 
-        {/* ── Slide-Down Menu Drawer ── */}
+        {/* ── Slide-Down Menu Drawer (Mobile & Tablet) ── */}
         {isOpen && (
-          <div className="glass-header border-t border-white/[0.08] px-4 py-5 mt-2 animate-in fade-in slide-in-from-top-4 duration-200">
+          <div className="glass-header border-t border-white/[0.08] px-4 py-5 mt-2 max-h-[75vh] overflow-y-auto overscroll-contain animate-in fade-in slide-in-from-top-4 duration-200">
             <div className="max-w-7xl mx-auto space-y-4">
+              {/* Mobile Profile Banner */}
+              <div
+                onClick={() => {
+                  setIsOpen(false);
+                  setShowDnaModal(true);
+                }}
+                className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-amber-400/40 cursor-pointer transition-all touch-feedback"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-black font-extrabold shadow-sm">
+                    <User className="w-4.5 h-4.5 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <h4 className="font-display font-bold text-sm text-white">
+                      Cinephile DNA Profile
+                    </h4>
+                    <p className="text-[11px] text-white/50">
+                      View your taste metrics & stats
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-400/15 text-amber-400 border border-amber-400/30">
+                  Open
+                </span>
+              </div>
+
               {/* Mobile primary nav links */}
-              <div className="md:hidden flex flex-col gap-1.5 pb-3 border-b border-white/10">
+              <div className="flex flex-col gap-1.5 pb-3 border-b border-white/10">
                 {navItems.map(({ path, label }) => {
                   const active = isActive(path);
                   return (
@@ -331,7 +477,7 @@ export const Navbar = () => {
                         soundEffects.playHoverTick();
                         setIsOpen(false);
                       }}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                      className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all touch-feedback ${
                         active
                           ? 'bg-amber-400 text-black font-bold'
                           : 'text-white/70 hover:text-white hover:bg-white/[0.06]'
@@ -343,24 +489,64 @@ export const Navbar = () => {
                 })}
               </div>
 
-              {/* Extra Cinema Features */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <Link
-                  to="/time-machine"
-                  onClick={() => {
-                    soundEffects.playHoverTick();
-                    setIsOpen(false);
-                  }}
-                  className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs transition-all ${
-                    isActive('/time-machine')
-                      ? 'bg-amber-400 text-black font-bold border-amber-400 shadow-sm'
-                      : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/5 text-white/80'
-                  }`}
-                >
-                  <Hourglass className={`w-4 h-4 ${isActive('/time-machine') ? 'text-black' : 'text-amber-400'}`} />
-                  <span>Time Machine</span>
-                </Link>
+              {/* Discovery Directories */}
+              <div className="pb-3 border-b border-white/10">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 block mb-2 px-1">
+                  Directories
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to="/categories"
+                    onClick={() => {
+                      soundEffects.playHoverTick();
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/80"
+                  >
+                    <Clapperboard className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Categories A-Z</span>
+                  </Link>
 
+                  <Link
+                    to="/languages"
+                    onClick={() => {
+                      soundEffects.playHoverTick();
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/80"
+                  >
+                    <span className="text-amber-400 font-bold text-xs">文A</span>
+                    <span>Languages A-Z</span>
+                  </Link>
+
+                  <Link
+                    to="/countries"
+                    onClick={() => {
+                      soundEffects.playHoverTick();
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/80"
+                  >
+                    <span className="text-amber-400 text-xs">🌐</span>
+                    <span>Countries A-Z</span>
+                  </Link>
+
+                  <Link
+                    to="/explore"
+                    onClick={() => {
+                      soundEffects.playHoverTick();
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/80"
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Explore Catalog</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Extra Cinema Features */}
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => {
                     setIsOpen(false);
@@ -384,21 +570,14 @@ export const Navbar = () => {
                 </button>
 
                 <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    setShowDnaModal(true);
-                  }}
-                  className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/80 transition-all text-left"
-                >
-                  <Dna className="w-4 h-4 text-amber-400" />
-                  <span>Cinephile DNA</span>
-                </button>
-
-                <button
                   onClick={toggleAudio}
                   className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/80 transition-all text-left"
                 >
-                  {soundOn ? <Volume2 className="w-4 h-4 text-amber-400" /> : <VolumeX className="w-4 h-4 text-white/40" />}
+                  {soundOn ? (
+                    <Volume2 className="w-4 h-4 text-amber-400" />
+                  ) : (
+                    <VolumeX className="w-4 h-4 text-white/40" />
+                  )}
                   <span>{soundOn ? 'Sound: ON' : 'Sound: OFF'}</span>
                 </button>
 
@@ -418,21 +597,27 @@ export const Navbar = () => {
         )}
       </header>
 
-      {/* ── Fixed Mobile Bottom Navigation Bar (Android & iOS) ── */}
+      {/* ── Fixed Mobile Bottom Navigation Bar (Android & iOS Optimized) ── */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#07080b]/95 backdrop-blur-2xl border-t border-white/[0.08] shadow-[0_-8px_32px_rgba(0,0,0,0.85)] safe-bottom-nav"
         aria-label="Mobile Navigation"
       >
-        <div className="grid grid-cols-5 h-[60px] items-center px-1">
+        <div className="grid grid-cols-5 h-[56px] items-center px-1">
           {/* 1. Home */}
           <Link
             to="/"
             onClick={() => soundEffects.playHoverTick()}
             className={`flex flex-col items-center justify-center h-full gap-1 touch-feedback ${
-              isActive('/') ? 'text-amber-400 font-bold' : 'text-white/50 hover:text-white/80'
+              isActive('/')
+                ? 'text-amber-400 font-bold'
+                : 'text-white/50 hover:text-white/80'
             }`}
           >
-            <Home className={`w-5 h-5 transition-transform ${isActive('/') ? 'scale-110 stroke-[2.5]' : 'stroke-[1.75]'}`} />
+            <Home
+              className={`w-5 h-5 transition-transform ${
+                isActive('/') ? 'scale-110 stroke-[2.5]' : 'stroke-[1.75]'
+              }`}
+            />
             <span className="text-[10px] tracking-tight">Home</span>
           </Link>
 
@@ -441,22 +626,34 @@ export const Navbar = () => {
             to="/movies"
             onClick={() => soundEffects.playHoverTick()}
             className={`flex flex-col items-center justify-center h-full gap-1 touch-feedback ${
-              isActive('/movies') ? 'text-amber-400 font-bold' : 'text-white/50 hover:text-white/80'
+              isActive('/movies')
+                ? 'text-amber-400 font-bold'
+                : 'text-white/50 hover:text-white/80'
             }`}
           >
-            <Film className={`w-5 h-5 transition-transform ${isActive('/movies') ? 'scale-110 stroke-[2.5]' : 'stroke-[1.75]'}`} />
+            <Film
+              className={`w-5 h-5 transition-transform ${
+                isActive('/movies') ? 'scale-110 stroke-[2.5]' : 'stroke-[1.75]'
+              }`}
+            />
             <span className="text-[10px] tracking-tight">Movies</span>
           </Link>
 
-          {/* 3. TV */}
+          {/* 3. Series */}
           <Link
             to="/tv"
             onClick={() => soundEffects.playHoverTick()}
             className={`flex flex-col items-center justify-center h-full gap-1 touch-feedback ${
-              isActive('/tv') ? 'text-amber-400 font-bold' : 'text-white/50 hover:text-white/80'
+              isActive('/tv')
+                ? 'text-amber-400 font-bold'
+                : 'text-white/50 hover:text-white/80'
             }`}
           >
-            <Tv className={`w-5 h-5 transition-transform ${isActive('/tv') ? 'scale-110 stroke-[2.5]' : 'stroke-[1.75]'}`} />
+            <Tv
+              className={`w-5 h-5 transition-transform ${
+                isActive('/tv') ? 'scale-110 stroke-[2.5]' : 'stroke-[1.75]'
+              }`}
+            />
             <span className="text-[10px] tracking-tight">Series</span>
           </Link>
 
@@ -465,33 +662,61 @@ export const Navbar = () => {
             to="/search"
             onClick={() => soundEffects.playHoverTick()}
             className={`flex flex-col items-center justify-center h-full gap-1 touch-feedback ${
-              isActive('/search') ? 'text-amber-400 font-bold' : 'text-white/50 hover:text-white/80'
+              isActive('/search')
+                ? 'text-amber-400 font-bold'
+                : 'text-white/50 hover:text-white/80'
             }`}
           >
-            <Search className={`w-5 h-5 transition-transform ${isActive('/search') ? 'scale-110 stroke-[2.5]' : 'stroke-[1.75]'}`} />
+            <Search
+              className={`w-5 h-5 transition-transform ${
+                isActive('/search') ? 'scale-110 stroke-[2.5]' : 'stroke-[1.75]'
+              }`}
+            />
             <span className="text-[10px] tracking-tight">Search</span>
           </Link>
 
-          {/* 5. Watchlist / Saved */}
+          {/* 5. Saved (Watchlist) */}
           <button
             onClick={() => {
               soundEffects.playHoverTick();
               setShowWatchlistModal(true);
             }}
-            className="relative flex flex-col items-center justify-center h-full gap-1 touch-feedback text-white/50 hover:text-white/80"
+            className={`relative flex flex-col items-center justify-center h-full gap-1 touch-feedback ${
+              showWatchlistModal
+                ? 'text-amber-400 font-bold'
+                : 'text-white/50 hover:text-white/80'
+            }`}
           >
             <div className="relative">
-              <Bookmark className="w-5 h-5 stroke-[1.75]" />
+              <Bookmark
+                className={`w-5 h-5 ${
+                  showWatchlistModal ? 'stroke-[2.5]' : 'stroke-[1.75]'
+                }`}
+              />
               {watchlist.length > 0 && (
-                <span className="absolute -top-1 -right-2.5 flex items-center justify-center min-w-[15px] h-[15px] px-1 text-[9px] font-extrabold rounded-full bg-amber-400 text-black shadow-sm">
+                <span className="absolute -top-1 -right-2 flex items-center justify-center min-w-[15px] h-[15px] px-1 text-[9px] font-black rounded-full bg-amber-400 text-black shadow-sm">
                   {watchlist.length}
                 </span>
               )}
             </div>
-            <span className="text-[10px] font-semibold tracking-tight">Saved</span>
+            <span className="text-[10px] tracking-tight">Saved</span>
           </button>
         </div>
       </nav>
+
+      {/* ── Floating Action Button (Safely Positioned Above Bottom Nav on Mobile) ── */}
+      <button
+        onClick={() => {
+          soundEffects.playHoverTick();
+          setShowRouletteModal(true);
+        }}
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
+        className="md:hidden fixed right-4 z-40 w-11 h-11 rounded-full bg-[#10131d]/90 backdrop-blur-xl border border-amber-400/40 text-amber-400 flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.35)] hover:border-amber-400 active:scale-95 transition-all touch-feedback"
+        title="Cinema Roulette"
+        aria-label="Cinema Roulette"
+      >
+        <Sparkles className="w-5 h-5" />
+      </button>
 
       {/* ── Watchlist Modal ── */}
       {showWatchlistModal && (
@@ -500,7 +725,9 @@ export const Navbar = () => {
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/[0.02]">
               <div className="flex items-center gap-2">
                 <Bookmark className="w-5 h-5 text-amber-400" />
-                <h3 className="font-display font-bold text-lg text-white">My Watchlist</h3>
+                <h3 className="font-display font-bold text-lg text-white">
+                  My Watchlist
+                </h3>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-400 font-semibold">
                   {watchlist.length}
                 </span>
@@ -523,12 +750,13 @@ export const Navbar = () => {
                     Your Watchlist is Empty
                   </h4>
                   <p className="text-sm text-white/50 max-w-xs">
-                    Bookmark your favorite movies and shows to easily pick up where you left off.
+                    Bookmark your favorite movies and shows to easily pick up
+                    where you left off.
                   </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {watchlist.map(item => (
+                  {watchlist.map((item) => (
                     <div
                       key={item.id}
                       className="group flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 hover:border-amber-400/30 transition-all cursor-pointer"
@@ -538,7 +766,11 @@ export const Navbar = () => {
                       }}
                     >
                       <img
-                        src={item.poster_path ? `https://image.tmdb.org/t/p/w200${item.poster_path}` : ''}
+                        src={
+                          item.poster_path
+                            ? `https://image.tmdb.org/t/p/w200${item.poster_path}`
+                            : ''
+                        }
                         alt={item.title}
                         className="w-14 h-20 object-cover rounded-lg flex-shrink-0 bg-neutral-900 border border-white/10"
                       />

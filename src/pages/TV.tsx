@@ -60,10 +60,10 @@ const TVPage = () => {
           </div>
 
           {/* Tab Selector Pills */}
-          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md">
+          <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md overflow-x-auto scrollbar-none max-w-full touch-pan-x">
             <button
               onClick={() => setActiveTab('trending')}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 touch-feedback ${
                 activeTab === 'trending'
                   ? 'bg-amber-400 text-black shadow-md shadow-amber-400/30'
                   : 'text-white/70 hover:text-white hover:bg-white/5'
@@ -74,7 +74,7 @@ const TVPage = () => {
             </button>
             <button
               onClick={() => setActiveTab('popular')}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 touch-feedback ${
                 activeTab === 'popular'
                   ? 'bg-amber-400 text-black shadow-md shadow-amber-400/30'
                   : 'text-white/70 hover:text-white hover:bg-white/5'
@@ -85,7 +85,7 @@ const TVPage = () => {
             </button>
             <button
               onClick={() => setActiveTab('topRated')}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 touch-feedback ${
                 activeTab === 'topRated'
                   ? 'bg-amber-400 text-black shadow-md shadow-amber-400/30'
                   : 'text-white/70 hover:text-white hover:bg-white/5'

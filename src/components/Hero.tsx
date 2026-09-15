@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Info, Star, Plus, Check, Youtube, X, Flame } from 'lucide-react';
 import { tmdb, type Movie } from '@/services/tmdb';
+import { fanart } from '@/services/fanart';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { soundEffects } from '@/lib/soundEffects';
 import { CinematicParticles } from './CinematicParticles';
@@ -16,6 +17,7 @@ interface VideoTrailer {
 
 export const Hero = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
+  const [logos, setLogos] = useState<Record<number, string>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlay, setIsAutoPlay] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -33,6 +35,18 @@ export const Hero = () => {
         const data = await tmdb.getTrending('movie', 'week');
         const list = data.results?.slice(0, 5) || [];
         setMovies(list);
+
+        // Fetch official high-res clear logos from Fanart.tv
+        list.forEach(async (m: Movie) => {
+          try {
+            const logo = await fanart.getMovieLogo(m.id);
+            if (logo) {
+              setLogos((prev) => ({ ...prev, [m.id]: logo }));
+            }
+          } catch {
+            // Fallback gracefully
+          }
+        });
       } catch (e) {
         console.error('Failed to load hero movies:', e);
       }
@@ -201,10 +215,20 @@ export const Hero = () => {
               )}
             </div>
 
-            {/* Title */}
-            <h1 className="font-display font-extrabold text-3xl sm:text-5xl md:text-6xl text-white tracking-tight leading-[1.08] mb-3 sm:mb-4 text-balance drop-shadow-2xl">
-              {featured.title}
-            </h1>
+            {/* Title / Official Transparent Clear Logo */}
+            {logos[featured.id] ? (
+              <div className="mb-3 sm:mb-4">
+                <img
+                  src={logos[featured.id]}
+                  alt={featured.title}
+                  className="max-h-16 sm:max-h-24 md:max-h-28 max-w-[280px] sm:max-w-md object-contain object-left drop-shadow-[0_8px_24px_rgba(0,0,0,0.9)] animate-in fade-in zoom-in-95 duration-500"
+                />
+              </div>
+            ) : (
+              <h1 className="font-display font-extrabold text-3xl sm:text-5xl md:text-6xl text-white tracking-tight leading-[1.08] mb-3 sm:mb-4 text-balance drop-shadow-2xl">
+                {featured.title}
+              </h1>
+            )}
 
             {/* Overview */}
             <p className="text-xs sm:text-base text-white/70 line-clamp-2 sm:line-clamp-3 mb-5 sm:mb-6 leading-relaxed font-light max-w-xl text-pretty drop-shadow-sm">

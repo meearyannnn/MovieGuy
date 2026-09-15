@@ -9,6 +9,7 @@ import { CineVibeMeter } from '@/components/CineVibeMeter';
 import { RatingsDisplay } from '@/components/RatingsDisplay';
 import { ActorFilmographyModal } from '@/components/ActorFilmographyModal';
 import { useOmdb } from '@/services/omdb';
+import { fanart } from '@/services/fanart';
 import { videoSources, type VideoSource } from '@/types/videoSources';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { toast } from 'sonner';
@@ -25,6 +26,7 @@ const MovieDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [movie, setMovie] = useState<MovieDetail | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPlayer, setShowPlayer] = useState(false);
   const [lightsOff, setLightsOff] = useState(false);
@@ -65,6 +67,11 @@ const MovieDetailPage = () => {
 
         const creditsData = await tmdb.getCredits(parseInt(id), 'movie');
         setCast(creditsData.cast?.slice(0, 12) || []);
+
+        // Fetch high-definition transparent clear logo from Fanart.tv
+        fanart.getMovieLogo(id).then((logo) => {
+          if (logo) setLogoUrl(logo);
+        }).catch(() => {});
       } catch (error) {
         console.error('Error loading movie details:', error);
       } finally {
@@ -290,10 +297,20 @@ const MovieDetailPage = () => {
                   ) : null}
                 </div>
 
-                {/* Title */}
-                <h1 className="font-display font-extrabold text-3xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[1.08] mb-4">
-                  {movie.title}
-                </h1>
+                {/* Title / Fanart Official Clear Logo */}
+                {logoUrl ? (
+                  <div className="mb-4">
+                    <img
+                      src={logoUrl}
+                      alt={movie.title}
+                      className="max-h-16 sm:max-h-24 md:max-h-28 max-w-[280px] sm:max-w-md object-contain object-left drop-shadow-[0_8px_24px_rgba(0,0,0,0.95)] animate-in fade-in zoom-in-95 duration-500"
+                    />
+                  </div>
+                ) : (
+                  <h1 className="font-display font-extrabold text-3xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[1.08] mb-4">
+                    {movie.title}
+                  </h1>
+                )}
 
                 {/* Genres */}
                 <div className="flex flex-wrap items-center gap-2 mb-6">
